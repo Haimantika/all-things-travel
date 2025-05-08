@@ -55,8 +55,8 @@ export default function Home() {
       })
 
       xhr.open("POST", "https://visa-requirement.p.rapidapi.com/")
-      xhr.setRequestHeader("x-rapidapi-key", "a44fe90a4cmsh4069920c797fa54p17fa8bjsnd4baeb96a710")
-      xhr.setRequestHeader("x-rapidapi-host", "visa-requirement.p.rapidapi.com")
+      xhr.setRequestHeader("x-rapidapi-key", process.env.NEXT_PUBLIC_RAPIDAPI_KEY || "")
+      xhr.setRequestHeader("x-rapidapi-host", process.env.NEXT_PUBLIC_RAPIDAPI_HOST || "")
       xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
 
       xhr.send(data)
