@@ -1,5 +1,10 @@
 import { Pool } from "pg"
 
+// Define a custom error interface for PostgreSQL errors
+interface PostgresError extends Error {
+  code?: string;
+}
+
 // Create a connection pool with improved error handling
 let pool: Pool | null = null
 
@@ -19,7 +24,7 @@ function getPool() {
           console.log("Connected to PostgreSQL database")
         })
 
-        pool.on("error", (err) => {
+        pool.on("error", (err: PostgresError) => {
           console.error("Unexpected PostgreSQL error:", err)
           // Reset the pool if there's a fatal error
           if (err.code === "ECONNREFUSED" || err.code === "ENOTFOUND") {
