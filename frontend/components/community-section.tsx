@@ -21,31 +21,6 @@ export interface TravelerExperience {
   createdAt?: string
 }
 
-// Sample initial experiences as fallback
-const initialExperiences: TravelerExperience[] = [
-  {
-    id: "1",
-    country: "Japan",
-    experience: "The street food in Tokyo is amazing! Don't miss the takoyaki stands in Shibuya.",
-    userName: "SushiLover",
-    createdAt: "2023-05-15T12:00:00Z",
-  },
-  {
-    id: "2",
-    country: "Italy",
-    experience: "Rent a scooter in Amalfi Coast for the best views and experience!",
-    userName: "PastaFanatic",
-    createdAt: "2023-06-22T15:30:00Z",
-  },
-  {
-    id: "3",
-    country: "Thailand",
-    experience: "The night markets in Chiang Mai have the best food and souvenirs.",
-    userName: "BeachExplorer",
-    createdAt: "2023-07-10T09:15:00Z",
-  },
-]
-
 export function CommunitySection() {
   // State for experiences
   const [experiences, setExperiences] = useState<TravelerExperience[]>([])
@@ -159,30 +134,16 @@ export function CommunitySection() {
           })),
         )
       } else {
-        // If no localStorage data, use initial sample data
-        setExperiences(
-          selectedCountry ? initialExperiences.filter((exp) => exp.country === selectedCountry) : initialExperiences,
-        )
-
-        // Generate country counts from sample data
-        const countryData = initialExperiences.reduce((acc: { [key: string]: number }, exp: TravelerExperience) => {
-          const country = exp.country
-          acc[country] = (acc[country] || 0) + 1
-          return acc
-        }, {})
-
-        setCountriesWithCounts(
-          Object.keys(countryData).map((country) => ({
-            country,
-            count: countryData[country],
-          })),
-        )
+        // If no localStorage data, set empty arrays
+        setExperiences([])
+        setCountriesWithCounts([])
       }
       setUsingFallback(true)
     } catch (error) {
       console.error("Error loading from localStorage:", error)
-      // Use initial data as last resort
-      setExperiences(initialExperiences)
+      // Set empty arrays as last resort
+      setExperiences([])
+      setCountriesWithCounts([])
       setUsingFallback(true)
     }
   }
@@ -290,7 +251,7 @@ export function CommunitySection() {
 
       // Get existing experiences from localStorage
       const storedExperiences = localStorage.getItem("communityExperiences")
-      const existingExperiences = storedExperiences ? JSON.parse(storedExperiences) : initialExperiences
+      const existingExperiences = storedExperiences ? JSON.parse(storedExperiences) : []
 
       // Add to experiences array
       const updatedExperiences = [newExperience, ...existingExperiences]
