@@ -25,9 +25,6 @@ export function CommunitySection() {
   // State for experiences
   const [experiences, setExperiences] = useState<TravelerExperience[]>([])
 
-  // State for using local storage fallback
-  const [usingFallback, setUsingFallback] = useState(false)
-
   // State for countries with counts
   const [countriesWithCounts, setCountriesWithCounts] = useState<{ country: string; count: number }[]>([])
 
@@ -57,18 +54,8 @@ export function CommunitySection() {
 
   // Load experiences when selected country changes
   useEffect(() => {
-    if (usingFallback) {
-      // Filter locally if using fallback
-      const filtered = selectedCountry
-        ? experiences.filter((exp) => exp.country === selectedCountry)
-        : JSON.parse(localStorage.getItem("communityExperiences") || "[]")
-
-      setExperiences(filtered)
-    } else {
-      // Otherwise load from database
-      loadExperiences()
-    }
-  }, [selectedCountry, usingFallback])
+    loadExperiences()
+  }, [selectedCountry])
 
   // Function to load all data
   const loadData = async () => {
@@ -76,75 +63,26 @@ export function CommunitySection() {
     setDbError(null)
 
     try {
-      // Try to load from database
+      // Load from database
       const [experiencesResult, countriesResult] = await Promise.all([
         getExperiences(selectedCountry || undefined),
         getCountriesWithCounts(),
       ])
 
-      // Check if we got data back
-      if (experiencesResult.length > 0 || countriesResult.length > 0) {
-        setExperiences(
-          experiencesResult.map((exp) => ({
-            ...exp,
-            id: exp.id,
-            userName: exp.user_name,
-            createdAt: exp.created_at,
-          })),
-        )
-        setCountriesWithCounts(countriesResult)
-        setUsingFallback(false)
-      } else {
-        // If no data, try to load from localStorage
-        tryLoadFromLocalStorage()
-      }
+      setExperiences(
+        experiencesResult.map((exp) => ({
+          ...exp,
+          id: exp.id,
+          userName: exp.user_name,
+          createdAt: exp.created_at,
+        })),
+      )
+      setCountriesWithCounts(countriesResult)
     } catch (error) {
       console.error("Error loading data:", error)
-      setDbError("Unable to connect to database. Using local storage instead.")
-      // Fall back to localStorage
-      tryLoadFromLocalStorage()
+      setDbError("Unable to connect to database. Please try again later.")
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  // Try to load data from localStorage as fallback
-  const tryLoadFromLocalStorage = () => {
-    try {
-      const storedExperiences = localStorage.getItem("communityExperiences")
-      if (storedExperiences) {
-        const parsedExperiences = JSON.parse(storedExperiences)
-        setExperiences(
-          selectedCountry
-            ? parsedExperiences.filter((exp: TravelerExperience) => exp.country === selectedCountry)
-            : parsedExperiences,
-        )
-
-        // Generate country counts from local data
-        const countryData = parsedExperiences.reduce((acc: { [key: string]: number }, exp: TravelerExperience) => {
-          const country = exp.country
-          acc[country] = (acc[country] || 0) + 1
-          return acc
-        }, {})
-
-        setCountriesWithCounts(
-          Object.keys(countryData).map((country) => ({
-            country,
-            count: countryData[country],
-          })),
-        )
-      } else {
-        // If no localStorage data, set empty arrays
-        setExperiences([])
-        setCountriesWithCounts([])
-      }
-      setUsingFallback(true)
-    } catch (error) {
-      console.error("Error loading from localStorage:", error)
-      // Set empty arrays as last resort
-      setExperiences([])
-      setCountriesWithCounts([])
-      setUsingFallback(true)
     }
   }
 
@@ -160,8 +98,6 @@ export function CommunitySection() {
 
   // Function to load experiences
   const loadExperiences = async () => {
-    if (usingFallback) return
-
     try {
       const data = await getExperiences(selectedCountry || undefined)
       setExperiences(
@@ -174,8 +110,7 @@ export function CommunitySection() {
       )
     } catch (error) {
       console.error("Error loading experiences:", error)
-      setDbError("Unable to load experiences from database. Using local storage instead.")
-      tryLoadFromLocalStorage()
+      setDbError("Unable to load experiences from database. Please try again later.")
     }
   }
 
@@ -202,91 +137,29 @@ export function CommunitySection() {
     setIsSubmitting(true)
 
     try {
-      if (!usingFallback) {
-        // Try to add to database first
-        const result = await addExperience({
-          country: country.trim(),
-          experience: experience.trim(),
-          userName: userName.trim(),
-        })
+      // Add to database
+      const result = await addExperience({
+        country: country.trim(),
+        experience: experience.trim(),
+        userName: userName.trim(),
+      })
 
-        if (result.success) {
-          // Reset form
-          setCountry("")
-          setExperience("")
-          setUserName("")
+      if (result.success) {
+        // Reset form
+        setCountry("")
+        setExperience("")
+        setUserName("")
 
-          // Refresh data
-          await loadData()
-        } else {
-          setError(result.error || "Failed to add experience")
-          // If database fails, fall back to localStorage
-          addToLocalStorage()
-        }
+        // Refresh data
+        await loadData()
       } else {
-        // Using fallback, add directly to localStorage
-        addToLocalStorage()
+        setError(result.error || "Failed to add experience")
       }
     } catch (error) {
       console.error("Error adding experience:", error)
       setError("An error occurred while adding your experience. Please try again.")
-      // Try localStorage as fallback
-      addToLocalStorage()
     } finally {
       setIsSubmitting(false)
-    }
-  }
-
-  // Add experience to localStorage
-  const addToLocalStorage = () => {
-    try {
-      // Create new experience
-      const newExperience: TravelerExperience = {
-        id: Date.now().toString(),
-        country: country.trim(),
-        experience: experience.trim(),
-        userName: userName.trim(),
-        createdAt: new Date().toISOString(),
-      }
-
-      // Get existing experiences from localStorage
-      const storedExperiences = localStorage.getItem("communityExperiences")
-      const existingExperiences = storedExperiences ? JSON.parse(storedExperiences) : []
-
-      // Add to experiences array
-      const updatedExperiences = [newExperience, ...existingExperiences]
-
-      // Save to localStorage
-      localStorage.setItem("communityExperiences", JSON.stringify(updatedExperiences))
-
-      // Update state with filtered experiences if needed
-      setExperiences(
-        selectedCountry ? updatedExperiences.filter((exp) => exp.country === selectedCountry) : updatedExperiences,
-      )
-
-      // Update country counts
-      const countryData = updatedExperiences.reduce((acc: { [key: string]: number }, exp: TravelerExperience) => {
-        const country = exp.country
-        acc[country] = (acc[country] || 0) + 1
-        return acc
-      }, {})
-
-      setCountriesWithCounts(
-        Object.keys(countryData).map((country) => ({
-          country,
-          count: countryData[country],
-        })),
-      )
-
-      // Reset form
-      setCountry("")
-      setExperience("")
-      setUserName("")
-
-      setUsingFallback(true)
-    } catch (localError) {
-      console.error("Error saving to localStorage:", localError)
-      setError("Failed to save your experience. Please try again.")
     }
   }
 
@@ -453,12 +326,6 @@ export function CommunitySection() {
                 ? `Experiences in ${selectedCountry} (${experiences.length})`
                 : `All Community Experiences (${experiences.length})`}
             </span>
-
-            {usingFallback && (
-              <span className="text-xs font-normal text-yellow-600 flex items-center gap-1">
-                <Database className="h-3 w-3" /> Using local storage
-              </span>
-            )}
           </h3>
 
           {isLoading ? (
