@@ -5,9 +5,10 @@ import type React from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { ExperienceTag } from "@/components/experience-tag"
 import { ExperienceCard } from "@/components/experience-card"
-import { Globe, Send, User, AlertCircle, Loader2, RefreshCw, Database } from "lucide-react"
-import { getExperiences, addExperience } from "@/app/actions/experience-actions"
+import { Globe, Send, User, X, Filter, AlertCircle, Loader2, RefreshCw, Database } from "lucide-react"
+import { getExperiences, addExperience, getCountriesWithCounts } from "@/app/actions/experience-actions"
 
 // Define the experience type to match the database schema
 export interface TravelerExperience {
@@ -52,6 +53,9 @@ export function CommunitySection() {
   // State for using local storage fallback
   const [usingFallback, setUsingFallback] = useState(false)
 
+  // State for countries with counts
+  const [countriesWithCounts, setCountriesWithCounts] = useState<{ country: string; count: number }[]>([])
+
   // State for loading
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -68,10 +72,28 @@ export function CommunitySection() {
   // State for submission loading
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Load experiences on component mount
+  // State for filtering
+  const [selectedCountry, setSelectedCountry] = useState<string | null>(null)
+
+  // Load experiences and countries on component mount
   useEffect(() => {
     loadData()
   }, [])
+
+  // Load experiences when selected country changes
+  useEffect(() => {
+    if (usingFallback) {
+      // Filter locally if using fallback
+      const filtered = selectedCountry
+        ? experiences.filter((exp) => exp.country === selectedCountry)
+        : JSON.parse(localStorage.getItem("communityExperiences") || "[]")
+
+      setExperiences(filtered)
+    } else {
+      // Otherwise load from database
+      loadExperiences()
+    }
+  }, [selectedCountry, usingFallback])
 
   // Function to load all data
   const loadData = async () => {
@@ -80,10 +102,13 @@ export function CommunitySection() {
 
     try {
       // Try to load from database
-      const experiencesResult = await getExperiences()
+      const [experiencesResult, countriesResult] = await Promise.all([
+        getExperiences(selectedCountry || undefined),
+        getCountriesWithCounts(),
+      ])
 
       // Check if we got data back
-      if (experiencesResult.length > 0) {
+      if (experiencesResult.length > 0 || countriesResult.length > 0) {
         setExperiences(
           experiencesResult.map((exp) => ({
             ...exp,
@@ -92,6 +117,7 @@ export function CommunitySection() {
             createdAt: exp.created_at,
           })),
         )
+        setCountriesWithCounts(countriesResult)
         setUsingFallback(false)
       } else {
         // If no data, try to load from localStorage
@@ -113,10 +139,44 @@ export function CommunitySection() {
       const storedExperiences = localStorage.getItem("communityExperiences")
       if (storedExperiences) {
         const parsedExperiences = JSON.parse(storedExperiences)
-        setExperiences(parsedExperiences)
+        setExperiences(
+          selectedCountry
+            ? parsedExperiences.filter((exp: TravelerExperience) => exp.country === selectedCountry)
+            : parsedExperiences,
+        )
+
+        // Generate country counts from local data
+        const countryData = parsedExperiences.reduce((acc: { [key: string]: number }, exp: TravelerExperience) => {
+          const country = exp.country
+          acc[country] = (acc[country] || 0) + 1
+          return acc
+        }, {})
+
+        setCountriesWithCounts(
+          Object.keys(countryData).map((country) => ({
+            country,
+            count: countryData[country],
+          })),
+        )
       } else {
         // If no localStorage data, use initial sample data
-        setExperiences(initialExperiences)
+        setExperiences(
+          selectedCountry ? initialExperiences.filter((exp) => exp.country === selectedCountry) : initialExperiences,
+        )
+
+        // Generate country counts from sample data
+        const countryData = initialExperiences.reduce((acc: { [key: string]: number }, exp: TravelerExperience) => {
+          const country = exp.country
+          acc[country] = (acc[country] || 0) + 1
+          return acc
+        }, {})
+
+        setCountriesWithCounts(
+          Object.keys(countryData).map((country) => ({
+            country,
+            count: countryData[country],
+          })),
+        )
       }
       setUsingFallback(true)
     } catch (error) {
@@ -134,6 +194,27 @@ export function CommunitySection() {
       await loadData()
     } finally {
       setIsRefreshing(false)
+    }
+  }
+
+  // Function to load experiences
+  const loadExperiences = async () => {
+    if (usingFallback) return
+
+    try {
+      const data = await getExperiences(selectedCountry || undefined)
+      setExperiences(
+        data.map((exp) => ({
+          ...exp,
+          id: exp.id,
+          userName: exp.user_name,
+          createdAt: exp.created_at,
+        })),
+      )
+    } catch (error) {
+      console.error("Error loading experiences:", error)
+      setDbError("Unable to load experiences from database. Using local storage instead.")
+      tryLoadFromLocalStorage()
     }
   }
 
@@ -217,8 +298,24 @@ export function CommunitySection() {
       // Save to localStorage
       localStorage.setItem("communityExperiences", JSON.stringify(updatedExperiences))
 
-      // Update state
-      setExperiences(updatedExperiences)
+      // Update state with filtered experiences if needed
+      setExperiences(
+        selectedCountry ? updatedExperiences.filter((exp) => exp.country === selectedCountry) : updatedExperiences,
+      )
+
+      // Update country counts
+      const countryData = updatedExperiences.reduce((acc: { [key: string]: number }, exp: TravelerExperience) => {
+        const country = exp.country
+        acc[country] = (acc[country] || 0) + 1
+        return acc
+      }, {})
+
+      setCountriesWithCounts(
+        Object.keys(countryData).map((country) => ({
+          country,
+          count: countryData[country],
+        })),
+      )
 
       // Reset form
       setCountry("")
@@ -328,24 +425,73 @@ export function CommunitySection() {
           </form>
         </div>
 
-        {/* Refresh button */}
-        <div className="flex justify-end mb-4">
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-[#4ECDC4] border-[#4ECDC4] hover:bg-[#F0FFFC]"
-            onClick={refreshData}
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? "animate-spin" : ""}`} />
-            Refresh Experiences
-          </Button>
+        {/* Country filter tags */}
+        <div className="bg-white p-6 rounded-xl shadow-lg mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-[#333] flex items-center gap-2">
+              <Filter className="h-5 w-5 text-[#FF6B6B]" />
+              Filter by Country
+            </h3>
+
+            <div className="flex items-center gap-2">
+              {selectedCountry && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-[#FF6B6B] border-[#FF6B6B] hover:bg-[#FFF0F0]"
+                  onClick={() => setSelectedCountry(null)}
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Clear Filter
+                </Button>
+              )}
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-[#4ECDC4] border-[#4ECDC4] hover:bg-[#F0FFFC]"
+                onClick={refreshData}
+                disabled={isRefreshing}
+              >
+                <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            {countriesWithCounts.map((item, index) => (
+              <ExperienceTag
+                key={item.country}
+                country={item.country}
+                colorIndex={index}
+                isSelected={selectedCountry === item.country}
+                count={item.count}
+                onClick={() => setSelectedCountry((prev) => (prev === item.country ? null : item.country))}
+              />
+            ))}
+          </div>
+
+          {countriesWithCounts.length === 0 && !isLoading && (
+            <p className="text-center text-gray-500 py-4">No countries yet. Be the first to share an experience!</p>
+          )}
+
+          {isLoading && (
+            <div className="text-center py-4 text-gray-500">
+              <Loader2 className="h-5 w-5 animate-spin mx-auto mb-2" />
+              Loading countries...
+            </div>
+          )}
         </div>
 
         {/* Experience cards */}
         <div className="bg-white p-6 rounded-xl shadow-lg">
           <h3 className="text-xl font-bold mb-6 text-[#333] flex items-center justify-between">
-            <span>Community Experiences ({experiences.length})</span>
+            <span>
+              {selectedCountry
+                ? `Experiences in ${selectedCountry} (${experiences.length})`
+                : `All Community Experiences (${experiences.length})`}
+            </span>
 
             {usingFallback && (
               <span className="text-xs font-normal text-yellow-600 flex items-center gap-1">
@@ -372,11 +518,15 @@ export function CommunitySection() {
                       userName: exp.userName || exp.user_name || "",
                       createdAt: exp.createdAt || exp.created_at,
                     }}
-                    colorIndex={index % 5} // Simple color rotation
+                    colorIndex={countriesWithCounts.findIndex((c) => c.country === exp.country)}
                   />
                 ))
               ) : (
-                <div className="text-center py-8 text-gray-500">No experiences shared yet. Be the first to share!</div>
+                <div className="text-center py-8 text-gray-500">
+                  {selectedCountry
+                    ? `No experiences shared for ${selectedCountry} yet. Be the first to share!`
+                    : "No experiences shared yet. Be the first to share!"}
+                </div>
               )}
             </div>
           )}
@@ -385,6 +535,7 @@ export function CommunitySection() {
     </section>
   )
 }
+
 
 
 

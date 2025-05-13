@@ -44,3 +44,4 @@ export function ExperienceTag({ country, colorIndex, isSelected, count, onClick 
     </Badge>
   )
 }
+

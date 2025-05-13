@@ -28,15 +28,23 @@ export interface Experience {
 }
 
 // Get all experiences
-export async function getExperiences(): Promise<Experience[]> {
+export async function getExperiences(country?: string): Promise<Experience[]> {
   try {
     const initResult = await ensureInitialized()
     if (!initResult.success) {
       return []
     }
 
-    // Get all experiences
-    const result = await query("SELECT * FROM experiences ORDER BY created_at DESC")
+    let result
+
+    if (country) {
+      // Filter by country if provided
+      result = await query("SELECT * FROM experiences WHERE country = $1 ORDER BY created_at DESC", [country])
+    } else {
+      // Get all experiences
+      result = await query("SELECT * FROM experiences ORDER BY created_at DESC")
+    }
+
     return result.rows
   } catch (error) {
     console.error("Error fetching experiences:", error)
@@ -93,6 +101,29 @@ export async function addExperience(data: {
     }
   }
 }
+
+// Get unique countries with counts
+export async function getCountriesWithCounts(): Promise<{ country: string; count: number }[]> {
+  try {
+    const initResult = await ensureInitialized()
+    if (!initResult.success) {
+      return []
+    }
+
+    const result = await query(`
+      SELECT country, COUNT(*) as count 
+      FROM experiences 
+      GROUP BY country 
+      ORDER BY count DESC
+    `)
+
+    return result.rows
+  } catch (error) {
+    console.error("Error fetching countries with counts:", error)
+    return []
+  }
+}
+
 
 
 
