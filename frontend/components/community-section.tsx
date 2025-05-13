@@ -1,24 +1,26 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type React from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { ExperienceTag } from "@/components/experience-tag"
 import { ExperienceCard } from "@/components/experience-card"
-import { Globe, Send, User, X, Filter } from "lucide-react"
+import { Globe, Send, User, AlertCircle, Loader2, RefreshCw, Database } from "lucide-react"
+import { getExperiences, addExperience } from "@/app/actions/experience-actions"
 
-// Define the experience type
+// Define the experience type to match the database schema
 export interface TravelerExperience {
-  id: string
+  id: number | string
   country: string
   experience: string
-  userName: string
+  user_name?: string
+  userName?: string
+  created_at?: string
   createdAt?: string
 }
 
-// Sample initial experiences
+// Sample initial experiences as fallback
 const initialExperiences: TravelerExperience[] = [
   {
     id: "1",
@@ -41,47 +43,18 @@ const initialExperiences: TravelerExperience[] = [
     userName: "BeachExplorer",
     createdAt: "2023-07-10T09:15:00Z",
   },
-  {
-    id: "4",
-    country: "France",
-    experience: "Skip the Eiffel Tower lines by going early morning or booking in advance.",
-    userName: "CroissantQueen",
-    createdAt: "2023-08-05T14:45:00Z",
-  },
-  {
-    id: "5",
-    country: "Australia",
-    experience: "The Great Ocean Road is a must-do road trip with breathtaking coastal views.",
-    userName: "SurfDude",
-    createdAt: "2023-09-18T11:20:00Z",
-  },
-  {
-    id: "6",
-    country: "Japan",
-    experience: "Visit Fushimi Inari Shrine early in the morning to avoid crowds and get the best photos.",
-    userName: "TravelPhotographer",
-    createdAt: "2023-10-03T08:10:00Z",
-  },
-  {
-    id: "7",
-    country: "Italy",
-    experience:
-      "In Rome, the best gelato is found at small shops away from tourist attractions. Look for natural colors!",
-    userName: "GelatolLover",
-    createdAt: "2023-11-12T16:40:00Z",
-  },
-  {
-    id: "8",
-    country: "Thailand",
-    experience: "When visiting temples, always bring a light scarf to cover shoulders and knees as a sign of respect.",
-    userName: "CulturalExplorer",
-    createdAt: "2023-12-25T10:30:00Z",
-  },
 ]
 
 export function CommunitySection() {
   // State for experiences
-  const [experiences, setExperiences] = useState<TravelerExperience[]>(initialExperiences)
+  const [experiences, setExperiences] = useState<TravelerExperience[]>([])
+
+  // State for using local storage fallback
+  const [usingFallback, setUsingFallback] = useState(false)
+
+  // State for loading
+  const [isLoading, setIsLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   // State for form inputs
   const [country, setCountry] = useState("")
@@ -90,23 +63,86 @@ export function CommunitySection() {
 
   // State for form validation
   const [error, setError] = useState<string | null>(null)
+  const [dbError, setDbError] = useState<string | null>(null)
 
-  // State for filtering
-  const [selectedCountry, setSelectedCountry] = useState<string | null>(null)
+  // State for submission loading
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Get unique countries and count experiences for each
-  const countryData = experiences.reduce((acc: { [key: string]: number }, exp) => {
-    const country = exp.country
-    acc[country] = (acc[country] || 0) + 1
-    return acc
-  }, {})
+  // Load experiences on component mount
+  useEffect(() => {
+    loadData()
+  }, [])
 
-  // Sort countries by count (descending)
-  const sortedCountries = Object.keys(countryData).sort((a, b) => countryData[b] - countryData[a])
+  // Function to load all data
+  const loadData = async () => {
+    setIsLoading(true)
+    setDbError(null)
+
+    try {
+      // Try to load from database
+      const experiencesResult = await getExperiences()
+
+      // Check if we got data back
+      if (experiencesResult.length > 0) {
+        setExperiences(
+          experiencesResult.map((exp) => ({
+            ...exp,
+            id: exp.id,
+            userName: exp.user_name,
+            createdAt: exp.created_at,
+          })),
+        )
+        setUsingFallback(false)
+      } else {
+        // If no data, try to load from localStorage
+        tryLoadFromLocalStorage()
+      }
+    } catch (error) {
+      console.error("Error loading data:", error)
+      setDbError("Unable to connect to database. Using local storage instead.")
+      // Fall back to localStorage
+      tryLoadFromLocalStorage()
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Try to load data from localStorage as fallback
+  const tryLoadFromLocalStorage = () => {
+    try {
+      const storedExperiences = localStorage.getItem("communityExperiences")
+      if (storedExperiences) {
+        const parsedExperiences = JSON.parse(storedExperiences)
+        setExperiences(parsedExperiences)
+      } else {
+        // If no localStorage data, use initial sample data
+        setExperiences(initialExperiences)
+      }
+      setUsingFallback(true)
+    } catch (error) {
+      console.error("Error loading from localStorage:", error)
+      // Use initial data as last resort
+      setExperiences(initialExperiences)
+      setUsingFallback(true)
+    }
+  }
+
+  // Function to refresh data
+  const refreshData = async () => {
+    setIsRefreshing(true)
+    try {
+      await loadData()
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
 
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Reset error
+    setError(null)
 
     // Validate inputs
     if (!country.trim() || !experience.trim() || !userName.trim()) {
@@ -114,38 +150,101 @@ export function CommunitySection() {
       return
     }
 
-    // Create new experience
-    const newExperience: TravelerExperience = {
-      id: Date.now().toString(),
-      country: country.trim(),
-      experience: experience.trim(),
-      userName: userName.trim(),
-      createdAt: new Date().toISOString(),
+    // Validate maximum length
+    if (experience.trim().length > 500) {
+      setError("Your experience is too long. Please keep it under 500 characters.")
+      return
     }
 
-    // Add to experiences array
-    setExperiences([newExperience, ...experiences])
+    // Start submission process
+    setIsSubmitting(true)
 
-    // Reset form
-    setCountry("")
-    setExperience("")
-    setUserName("")
-    setError(null)
+    try {
+      if (!usingFallback) {
+        // Try to add to database first
+        const result = await addExperience({
+          country: country.trim(),
+          experience: experience.trim(),
+          userName: userName.trim(),
+        })
 
-    // If the new experience matches the current filter, keep it selected
-    if (selectedCountry && selectedCountry !== country.trim()) {
-      setSelectedCountry(null)
+        if (result.success) {
+          // Reset form
+          setCountry("")
+          setExperience("")
+          setUserName("")
+
+          // Refresh data
+          await loadData()
+        } else {
+          setError(result.error || "Failed to add experience")
+          // If database fails, fall back to localStorage
+          addToLocalStorage()
+        }
+      } else {
+        // Using fallback, add directly to localStorage
+        addToLocalStorage()
+      }
+    } catch (error) {
+      console.error("Error adding experience:", error)
+      setError("An error occurred while adding your experience. Please try again.")
+      // Try localStorage as fallback
+      addToLocalStorage()
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
-  // Filter experiences based on selected country
-  const filteredExperiences = selectedCountry
-    ? experiences.filter((exp) => exp.country === selectedCountry)
-    : experiences
+  // Add experience to localStorage
+  const addToLocalStorage = () => {
+    try {
+      // Create new experience
+      const newExperience: TravelerExperience = {
+        id: Date.now().toString(),
+        country: country.trim(),
+        experience: experience.trim(),
+        userName: userName.trim(),
+        createdAt: new Date().toISOString(),
+      }
+
+      // Get existing experiences from localStorage
+      const storedExperiences = localStorage.getItem("communityExperiences")
+      const existingExperiences = storedExperiences ? JSON.parse(storedExperiences) : initialExperiences
+
+      // Add to experiences array
+      const updatedExperiences = [newExperience, ...existingExperiences]
+
+      // Save to localStorage
+      localStorage.setItem("communityExperiences", JSON.stringify(updatedExperiences))
+
+      // Update state
+      setExperiences(updatedExperiences)
+
+      // Reset form
+      setCountry("")
+      setExperience("")
+      setUserName("")
+
+      setUsingFallback(true)
+    } catch (localError) {
+      console.error("Error saving to localStorage:", localError)
+      setError("Failed to save your experience. Please try again.")
+    }
+  }
 
   return (
     <section className="container mx-auto px-4 py-8 bg-[#FFF8E1]">
       <div className="max-w-5xl mx-auto">
+        {/* Database status indicator */}
+        {dbError && (
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
+            <Database className="h-5 w-5 text-yellow-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-yellow-600 text-sm">{dbError}</p>
+            </div>
+          </div>
+        )}
+
         {/* Experience submission form */}
         <div className="bg-white p-6 rounded-xl shadow-lg mb-12">
           <h3 className="text-xl font-bold mb-4 text-[#333]">Share Your Experience</h3>
@@ -164,6 +263,7 @@ export function CommunitySection() {
                     className="pl-10 pr-4 py-6 rounded-xl border-[#FFD166] focus:border-[#FF6B6B]"
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
@@ -180,6 +280,7 @@ export function CommunitySection() {
                     className="pl-10 pr-4 py-6 rounded-xl border-[#FFD166] focus:border-[#FF6B6B]"
                     value={userName}
                     onChange={(e) => setUserName(e.target.value)}
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
@@ -195,87 +296,95 @@ export function CommunitySection() {
                 className="min-h-[100px] rounded-xl border-[#FFD166] focus:border-[#FF6B6B]"
                 value={experience}
                 onChange={(e) => setExperience(e.target.value)}
+                disabled={isSubmitting}
               />
+              <p className="mt-1 text-xs text-gray-500">{500 - experience.length} characters remaining</p>
             </div>
 
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">{error}</div>
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <span>{error}</span>
+              </div>
             )}
 
             <Button
               type="submit"
               className="w-full bg-[#FF6B6B] hover:bg-[#FF9E9E] text-white py-6 rounded-xl text-lg flex items-center justify-center gap-2"
+              disabled={isSubmitting}
             >
-              <Send className="h-5 w-5" />
-              Share with Community
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Adding Experience...
+                </>
+              ) : (
+                <>
+                  <Send className="h-5 w-5" />
+                  Share with Community
+                </>
+              )}
             </Button>
           </form>
         </div>
 
-        {/* Country filter tags */}
-        <div className="bg-white p-6 rounded-xl shadow-lg mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-[#333] flex items-center gap-2">
-              <Filter className="h-5 w-5 text-[#FF6B6B]" />
-              Filter by Country
-            </h3>
-
-            {selectedCountry && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-[#FF6B6B] border-[#FF6B6B] hover:bg-[#FFF0F0]"
-                onClick={() => setSelectedCountry(null)}
-              >
-                <X className="h-4 w-4 mr-1" />
-                Clear Filter
-              </Button>
-            )}
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            {sortedCountries.map((country, index) => (
-              <ExperienceTag
-                key={country}
-                country={country}
-                colorIndex={index}
-                isSelected={selectedCountry === country}
-                count={countryData[country]}
-                onClick={() => setSelectedCountry((prev) => (prev === country ? null : country))}
-              />
-            ))}
-          </div>
-
-          {sortedCountries.length === 0 && (
-            <p className="text-center text-gray-500 py-4">No countries yet. Be the first to share an experience!</p>
-          )}
+        {/* Refresh button */}
+        <div className="flex justify-end mb-4">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-[#4ECDC4] border-[#4ECDC4] hover:bg-[#F0FFFC]"
+            onClick={refreshData}
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? "animate-spin" : ""}`} />
+            Refresh Experiences
+          </Button>
         </div>
 
         {/* Experience cards */}
         <div className="bg-white p-6 rounded-xl shadow-lg">
           <h3 className="text-xl font-bold mb-6 text-[#333] flex items-center justify-between">
-            <span>
-              {selectedCountry
-                ? `Experiences in ${selectedCountry} (${filteredExperiences.length})`
-                : `All Community Experiences (${experiences.length})`}
-            </span>
+            <span>Community Experiences ({experiences.length})</span>
+
+            {usingFallback && (
+              <span className="text-xs font-normal text-yellow-600 flex items-center gap-1">
+                <Database className="h-3 w-3" /> Using local storage
+              </span>
+            )}
           </h3>
 
-          <div className="space-y-4">
-            {filteredExperiences.length > 0 ? (
-              filteredExperiences.map((exp, index) => (
-                <ExperienceCard key={exp.id} experience={exp} colorIndex={sortedCountries.indexOf(exp.country)} />
-              ))
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                {selectedCountry
-                  ? `No experiences shared for ${selectedCountry} yet. Be the first to share!`
-                  : "No experiences shared yet. Be the first to share!"}
-              </div>
-            )}
-          </div>
+          {isLoading ? (
+            <div className="text-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-[#FF6B6B]" />
+              <p className="text-gray-500">Loading experiences...</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {experiences.length > 0 ? (
+                experiences.map((exp, index) => (
+                  <ExperienceCard
+                    key={exp.id}
+                    experience={{
+                      id: exp.id.toString(),
+                      country: exp.country,
+                      experience: exp.experience,
+                      userName: exp.userName || exp.user_name || "",
+                      createdAt: exp.createdAt || exp.created_at,
+                    }}
+                    colorIndex={index % 5} // Simple color rotation
+                  />
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">No experiences shared yet. Be the first to share!</div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </section>
   )
 }
+
+
+
