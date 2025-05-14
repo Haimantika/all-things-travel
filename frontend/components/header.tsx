@@ -1,6 +1,7 @@
-import { Plane } from 'lucide-react'
+import { Plane } from "lucide-react"
 import { Navigation } from "@/components/navigation"
-import Link from 'next/link'
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 interface HeaderProps {
   showNavigation?: boolean
@@ -16,7 +17,11 @@ export function Header({ showNavigation = false }: HeaderProps) {
         <h1 className="text-2xl font-bold text-[#FF6B6B] tracking-tight">Nomado</h1>
       </Link>
 
-      {showNavigation && <Navigation />}
+      {showNavigation && (
+        <div className="flex items-center gap-4">
+          <Navigation />
+        </div>
+      )}
     </header>
   )
 }
