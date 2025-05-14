@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "engines": {
-    "node": "20.18.0"
+    "node": "22.15"
   },
   "dependencies": {
     "@radix-ui/react-popover": "^1.1.13",
