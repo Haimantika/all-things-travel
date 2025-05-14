@@ -1,6 +1,6 @@
 "use client"
 import { Button } from "@/components/ui/button"
-import { Compass, MapPin, Plane, Globe } from "lucide-react"
+import { Compass, MapPin, Plane, Globe, StampIcon as Passport } from "lucide-react"
 import { useState } from "react"
 import { countryNameToCode } from "@/lib/countries"
 import { VisaInfoCard } from "@/components/visa-info-card"
@@ -9,11 +9,13 @@ import { SimpleCountryDropdown } from "@/components/simple-country-dropdown"
 import { MobileNavigation } from "@/components/mobile-navigation"
 
 export default function Home() {
+  const [passportCountry, setPassportCountry] = useState("")
   const [fromLocation, setFromLocation] = useState("")
   const [toLocation, setToLocation] = useState("")
   const [visaInfo, setVisaInfo] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [additionalInfo, setAdditionalInfo] = useState<string | null>(null)
 
   const getCountryCode = (countryName: string): string | null => {
     const normalizedName = countryName.trim()
@@ -29,30 +31,36 @@ export default function Home() {
   }
 
   const handleFindAdventure = async () => {
-    if (!fromLocation || !toLocation) {
-      setError("Please select both departure and destination countries")
+    if (!passportCountry || !toLocation) {
+      setError("Please select both passport country and destination country")
       return
     }
 
-    const fromCode = getCountryCode(fromLocation)
+    const passportCode = getCountryCode(passportCountry)
     const toCode = getCountryCode(toLocation)
 
-    if (!fromCode || !toCode) {
+    if (!passportCode || !toCode) {
       setError("Please select valid countries")
       return
     }
 
     setError(null)
+    setAdditionalInfo(null)
     setIsLoading(true)
+
     try {
-      const data = `passport=${fromCode}&destination=${toCode}`
+      const data = `passport=${passportCode}&destination=${toCode}`
       const xhr = new XMLHttpRequest()
       xhr.withCredentials = true
 
       xhr.addEventListener("readystatechange", function () {
         if (this.readyState === this.DONE) {
-          setVisaInfo(JSON.parse(this.responseText))
+          const response = JSON.parse(this.responseText)
+          setVisaInfo(response)
           setIsLoading(false)
+
+          // Check for special cases
+          checkSpecialCases(passportCountry, fromLocation, toLocation, response)
         }
       })
 
@@ -67,6 +75,30 @@ export default function Home() {
       setError("Failed to fetch visa information. Please try again.")
       setIsLoading(false)
     }
+  }
+
+  // Function to check for special visa cases
+  const checkSpecialCases = (passport: string, from: string, to: string, visaInfo: any) => {
+    // Case: Indian passport holders with US visa traveling to Dubai
+    if (
+      passport === "India" &&
+      from === "United States" &&
+      to === "United Arab Emirates" &&
+      visaInfo.visa !== "visa free"
+    ) {
+      setAdditionalInfo(
+        "Special case: Indian passport holders with a valid US visa can get a visa on arrival in the UAE.",
+      )
+    }
+
+    // Case: Many countries traveling to Turkey with valid Schengen, UK, or US visa
+    else if (to === "Turkey" && visaInfo.visa !== "visa free" && ["United States", "United Kingdom"].includes(from)) {
+      setAdditionalInfo(
+        "Special case: Travelers with a valid Schengen, UK, or US visa may be eligible for an e-Visa or visa on arrival in Turkey.",
+      )
+    }
+
+    // Add more special cases as needed
   }
 
   return (
@@ -93,11 +125,21 @@ export default function Home() {
               <div className="grid grid-cols-1 gap-4 mb-4">
                 <div className="relative">
                   <SimpleCountryDropdown
+                    label="Passport Country"
+                    value={passportCountry}
+                    onChange={setPassportCountry}
+                    placeholder="Select your passport country"
+                    icon={<Passport className="h-5 w-5 text-[#FF6B6B]" />}
+                  />
+                </div>
+
+                <div className="relative">
+                  <SimpleCountryDropdown
                     label="From"
                     value={fromLocation}
                     onChange={setFromLocation}
-                    placeholder="Select your country"
-                    icon={<Plane className="h-5 w-5 text-[#FF6B6B]" />}
+                    placeholder="Select departure country"
+                    icon={<Plane className="h-5 w-5 text-[#4ECDC4]" />}
                   />
                 </div>
 
@@ -107,7 +149,7 @@ export default function Home() {
                     value={toLocation}
                     onChange={setToLocation}
                     placeholder="Select destination country"
-                    icon={<MapPin className="h-5 w-5 text-[#4ECDC4]" />}
+                    icon={<MapPin className="h-5 w-5 text-[#FFD166]" />}
                   />
                 </div>
               </div>
@@ -124,8 +166,16 @@ export default function Home() {
             {/* Error Message */}
             {error && <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600">{error}</div>}
 
+            {/* Special Case Information */}
+            {additionalInfo && (
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl text-blue-700">
+                <p className="font-medium mb-1">Additional Information</p>
+                <p>{additionalInfo}</p>
+              </div>
+            )}
+
             {/* Visa Information Card */}
-            {visaInfo && <VisaInfoCard {...visaInfo} />}
+            {visaInfo && <VisaInfoCard {...visaInfo} additionalInfo={additionalInfo} />}
           </div>
         </div>
       </section>
@@ -205,6 +255,7 @@ export default function Home() {
     </div>
   )
 }
+
 
 
 

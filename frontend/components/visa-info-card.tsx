@@ -1,4 +1,14 @@
-import { Check, Clock, CreditCard, Globe, MapPin, Phone, AlertCircle, ArrowRight } from "lucide-react"
+import {
+  Check,
+  Clock,
+  CreditCard,
+  Globe,
+  MapPin,
+  Phone,
+  AlertCircle,
+  ArrowRight,
+  StampIcon as Passport,
+} from "lucide-react"
 
 interface VisaInfoProps {
   passport_of: string
@@ -11,6 +21,7 @@ interface VisaInfoProps {
   phone_code: string
   color: string
   link?: string
+  additionalInfo?: string | null
 }
 
 export function VisaInfoCard({
@@ -24,6 +35,7 @@ export function VisaInfoCard({
   phone_code,
   color,
   link,
+  additionalInfo,
 }: VisaInfoProps) {
   // Determine status color
   const statusColor = color === "red" ? "bg-red-500" : color === "green" ? "bg-green-500" : "bg-yellow-500"
@@ -36,7 +48,7 @@ export function VisaInfoCard({
     <div className="w-full max-w-3xl mx-auto mt-8 overflow-hidden rounded-xl shadow-lg">
       {/* Card Header with Gradient */}
       <div className={`relative p-6 ${statusBgColor}`}>
-        <div className="absolute top-0 left-0 w-2 h-full ${statusColor}"></div>
+        <div className={`absolute top-0 left-0 w-2 h-full ${statusColor}`}></div>
         <div className="flex justify-between items-center">
           <h3 className="text-2xl font-bold flex items-center gap-2 text-[#333]">
             <Globe className="h-6 w-6 text-[#FF6B6B]" />
@@ -49,7 +61,7 @@ export function VisaInfoCard({
           </div>
         </div>
         <p className="text-[#666] mt-1">
-          Travel details from {passport_of} to {destination}
+          Travel details for {passport_of} passport to {destination}
         </p>
       </div>
 
@@ -59,10 +71,10 @@ export function VisaInfoCard({
           <div className="space-y-4">
             <div className="flex items-start gap-3">
               <div className="bg-[#FFF8E1] p-2 rounded-full">
-                <MapPin className="h-5 w-5 text-[#FF6B6B]" />
+                <Passport className="h-5 w-5 text-[#FF6B6B]" />
               </div>
               <div>
-                <h3 className="font-medium text-gray-500">From</h3>
+                <h3 className="font-medium text-gray-500">Passport</h3>
                 <p className="text-lg font-semibold text-[#333]">{passport_of}</p>
               </div>
             </div>
@@ -72,7 +84,7 @@ export function VisaInfoCard({
                 <MapPin className="h-5 w-5 text-[#4ECDC4]" />
               </div>
               <div>
-                <h3 className="font-medium text-gray-500">To</h3>
+                <h3 className="font-medium text-gray-500">Destination</h3>
                 <p className="text-lg font-semibold text-[#333]">{destination}</p>
                 {capital && <p className="text-sm text-gray-500">Capital: {capital}</p>}
               </div>
@@ -137,6 +149,17 @@ export function VisaInfoCard({
           </div>
         </div>
 
+        {/* Special Case Information */}
+        {additionalInfo && (
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div>
+              <h3 className="font-medium text-gray-700">Special Consideration</h3>
+              <p className="text-blue-700">{additionalInfo}</p>
+            </div>
+          </div>
+        )}
+
         {/* Apply for Visa Link */}
         {link && (
           <div className="mt-6 pt-4 border-t border-gray-100">
@@ -155,3 +178,4 @@ export function VisaInfoCard({
     </div>
   )
 }
+
