@@ -12,7 +12,7 @@ export default function CommunityPage() {
       {/* Page Title */}
       <div className="container mx-auto px-4 pt-4 md:pt-8 pb-2 md:pb-4">
         <h1 className="text-3xl md:text-5xl font-bold text-[#333] mb-2 md:mb-4 leading-tight text-center">
-          Hear from the <span className="text-[#FF6B6B]">Community</span> 👋
+          Hear from the <span className="text-[#FF6B6B]">community</span> 👋
         </h1>
         <p className="text-base md:text-lg text-[#333] mb-4 md:mb-8 text-center max-w-2xl mx-auto">
           Discover travel tips and experiences shared by fellow adventurers from around the world!

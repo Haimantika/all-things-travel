@@ -178,7 +178,7 @@ export function CommunitySection() {
 
         {/* Experience submission form */}
         <div className="bg-white p-6 rounded-xl shadow-lg mb-12">
-          <h3 className="text-xl font-bold mb-4 text-[#333]">Share Your Experience</h3>
+          <h3 className="text-xl font-bold mb-4 text-[#333]">Share your experience</h3>
 
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -201,7 +201,7 @@ export function CommunitySection() {
 
               <div>
                 <label htmlFor="userName" className="block text-sm font-medium text-[#666] mb-1">
-                  Your Name
+                  Your name
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-5 w-5 text-[#4ECDC4]" />
@@ -219,7 +219,7 @@ export function CommunitySection() {
 
             <div className="mb-4">
               <label htmlFor="experience" className="block text-sm font-medium text-[#666] mb-1">
-                Your Experience
+                Your experience
               </label>
               <Textarea
                 id="experience"
@@ -252,7 +252,7 @@ export function CommunitySection() {
               ) : (
                 <>
                   <Send className="h-5 w-5" />
-                  Share with Community
+                  Share with community
                 </>
               )}
             </Button>
@@ -264,7 +264,7 @@ export function CommunitySection() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-bold text-[#333] flex items-center gap-2">
               <Filter className="h-5 w-5 text-[#FF6B6B]" />
-              Filter by Country
+              Filter by country
             </h3>
 
             <div className="flex items-center gap-2">
@@ -324,7 +324,7 @@ export function CommunitySection() {
             <span>
               {selectedCountry
                 ? `Experiences in ${selectedCountry} (${experiences.length})`
-                : `All Community Experiences (${experiences.length})`}
+                : `All community experiences (${experiences.length})`}
             </span>
           </h3>
 

@@ -159,7 +159,7 @@ export default function Home() {
                 onClick={handleFindAdventure}
                 disabled={isLoading}
               >
-                {isLoading ? "Finding Adventure..." : "Find My Adventure!"}
+                {isLoading ? "Finding visa info..." : "Find visa info!"}
               </Button>
             </div>
 
@@ -192,7 +192,7 @@ export default function Home() {
             <div className="w-16 h-16 bg-[#FF6B6B] rounded-full flex items-center justify-center mb-4 mx-auto">
               <Globe className="h-8 w-8 text-white" />
             </div>
-            <h3 className="text-lg md:text-xl font-bold mb-2 text-center text-[#333]">Visa Stuff Made Easy</h3>
+            <h3 className="text-lg md:text-xl font-bold mb-2 text-center text-[#333]">Visa stuff made easy</h3>
             <p className="text-sm md:text-base text-[#666] text-center">
               "Do I need a visa?" We'll tell you! No more boring embassy website searches.
             </p>
@@ -202,7 +202,7 @@ export default function Home() {
             <div className="w-16 h-16 bg-[#4ECDC4] rounded-full flex items-center justify-center mb-4 mx-auto">
               <Compass className="h-8 w-8 text-white" />
             </div>
-            <h3 className="text-lg md:text-xl font-bold mb-2 text-center text-[#333]">Fun Itineraries</h3>
+            <h3 className="text-lg md:text-xl font-bold mb-2 text-center text-[#333]">Fun itineraries</h3>
             <p className="text-sm md:text-base text-[#666] text-center">
               Tell us what you love, and we'll plan your days. Food tours? Art? Shopping? We got you!
             </p>
@@ -227,7 +227,7 @@ export default function Home() {
                 <path d="m15 5 6.3 6.3a2.4 2.4 0 0 1 0 3.4L17 19"></path>
               </svg>
             </div>
-            <h3 className="text-lg md:text-xl font-bold mb-2 text-center text-[#333]">Packing Genius</h3>
+            <h3 className="text-lg md:text-xl font-bold mb-2 text-center text-[#333]">Packing guide</h3>
             <p className="text-sm md:text-base text-[#666] text-center">
               "Oops, forgot my charger!" Not anymore! We'll remind you to pack everything you need.
             </p>
