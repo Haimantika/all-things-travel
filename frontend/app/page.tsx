@@ -7,6 +7,8 @@ import { VisaInfoCard } from "@/components/visa-info-card"
 import { Header } from "@/components/header"
 import { SimpleCountryDropdown } from "@/components/simple-country-dropdown"
 import { MobileNavigation } from "@/components/mobile-navigation"
+import { specialVisaCases } from "@/lib/special-visa-cases"
+import { findSpecialVisaCase } from "@/lib/special-visa-cases"
 
 export default function Home() {
   const [passportCountry, setPassportCountry] = useState("")
@@ -17,17 +19,18 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
   const [additionalInfo, setAdditionalInfo] = useState<string | null>(null)
 
-  const getCountryCode = (countryName: string): string | null => {
-    const normalizedName = countryName.trim()
-    // Try exact match first
-    if (countryNameToCode[normalizedName]) {
-      return countryNameToCode[normalizedName]
+  // Function to find special visa case information
+  const findSpecialCaseInfo = (passport: string, from: string, to: string): string | null => {
+    // Use the existing function from special-visa-cases.ts
+    const specialCase = findSpecialVisaCase(passport, from, to)
+    
+    if (specialCase) {
+      console.log('Found special case:', specialCase.description)
+      return specialCase.description
     }
-    // Try case-insensitive match
-    const foundCountry = Object.keys(countryNameToCode).find(
-      (key) => key.toLowerCase() === normalizedName.toLowerCase(),
-    )
-    return foundCountry ? countryNameToCode[foundCountry] : null
+
+    console.log('No special case found for:', { passport, from, to })
+    return null
   }
 
   const handleFindAdventure = async () => {
@@ -44,9 +47,16 @@ export default function Home() {
       return
     }
 
+    // Reset previous results
     setError(null)
-    setAdditionalInfo(null)
+    setVisaInfo(null)
     setIsLoading(true)
+
+    // Find special case information BEFORE API call
+    const specialInfo = findSpecialCaseInfo(passportCountry, fromLocation, toLocation)
+
+    // Set the additional info directly
+    setAdditionalInfo(specialInfo)
 
     try {
       const data = `passport=${passportCode}&destination=${toCode}`
@@ -55,12 +65,15 @@ export default function Home() {
 
       xhr.addEventListener("readystatechange", function () {
         if (this.readyState === this.DONE) {
-          const response = JSON.parse(this.responseText)
-          setVisaInfo(response)
-          setIsLoading(false)
-
-          // Check for special cases
-          checkSpecialCases(passportCountry, fromLocation, toLocation, response)
+          try {
+            const response = JSON.parse(this.responseText)
+            setVisaInfo(response)
+            setIsLoading(false)
+          } catch (e) {
+            console.error("Error parsing API response:", e)
+            setError("Failed to parse visa information. Please try again.")
+            setIsLoading(false)
+          }
         }
       })
 
@@ -77,28 +90,17 @@ export default function Home() {
     }
   }
 
-  // Function to check for special visa cases
-  const checkSpecialCases = (passport: string, from: string, to: string, visaInfo: any) => {
-    // Case: Indian passport holders with US visa traveling to Dubai
-    if (
-      passport === "India" &&
-      from === "United States" &&
-      to === "United Arab Emirates" &&
-      visaInfo.visa !== "visa free"
-    ) {
-      setAdditionalInfo(
-        "Special case: Indian passport holders with a valid US visa can get a visa on arrival in the UAE.",
-      )
+  const getCountryCode = (countryName: string): string | null => {
+    const normalizedName = countryName.trim()
+    // Try exact match first
+    if (countryNameToCode[normalizedName]) {
+      return countryNameToCode[normalizedName]
     }
-
-    // Case: Many countries traveling to Turkey with valid Schengen, UK, or US visa
-    else if (to === "Turkey" && visaInfo.visa !== "visa free" && ["United States", "United Kingdom"].includes(from)) {
-      setAdditionalInfo(
-        "Special case: Travelers with a valid Schengen, UK, or US visa may be eligible for an e-Visa or visa on arrival in Turkey.",
-      )
-    }
-
-    // Add more special cases as needed
+    // Try case-insensitive match
+    const foundCountry = Object.keys(countryNameToCode).find(
+      (key) => key.toLowerCase() === normalizedName.toLowerCase(),
+    )
+    return foundCountry ? countryNameToCode[foundCountry] : null
   }
 
   return (
@@ -166,10 +168,10 @@ export default function Home() {
             {/* Error Message */}
             {error && <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600">{error}</div>}
 
-            {/* Special Case Information */}
+            {/* Special Case Information - Displayed separately */}
             {additionalInfo && (
               <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl text-blue-700">
-                <p className="font-medium mb-1">Additional Information</p>
+                <p className="font-medium mb-1">Additional information</p>
                 <p>{additionalInfo}</p>
               </div>
             )}
@@ -255,6 +257,13 @@ export default function Home() {
     </div>
   )
 }
+
+
+
+
+
+
+
 
 
 

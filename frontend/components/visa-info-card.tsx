@@ -37,6 +37,9 @@ export function VisaInfoCard({
   link,
   additionalInfo,
 }: VisaInfoProps) {
+  // Debug log to verify props
+  console.log("VisaInfoCard props:", { passport_of, destination, additionalInfo })
+
   // Determine status color
   const statusColor = color === "red" ? "bg-red-500" : color === "green" ? "bg-green-500" : "bg-yellow-500"
 
@@ -178,4 +181,6 @@ export function VisaInfoCard({
     </div>
   )
 }
+
+
 
