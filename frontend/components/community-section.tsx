@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { ExperienceTag } from "@/components/experience-tag"
 import { ExperienceCard } from "@/components/experience-card"
-import { Globe, Send, User, X, Filter, AlertCircle, Loader2, RefreshCw, Database } from "lucide-react"
+import { Globe, Send, User, X, Filter, AlertCircle, Loader2, RefreshCw, Database, Ban } from "lucide-react"
 import { getExperiences, addExperience, getCountriesWithCounts } from "@/app/actions/experience-actions"
+import { moderateContent } from "@/app/actions/moderation-actions"
 
 // Define the experience type to match the database schema
 export interface TravelerExperience {
@@ -40,6 +41,7 @@ export function CommunitySection() {
   // State for form validation
   const [error, setError] = useState<string | null>(null)
   const [dbError, setDbError] = useState<string | null>(null)
+  const [moderationError, setModerationError] = useState<{ flagged: boolean; reasons: string[] } | null>(null)
 
   // State for submission loading
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -118,8 +120,9 @@ export function CommunitySection() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Reset error
+    // Reset errors
     setError(null)
+    setModerationError(null)
 
     // Validate inputs
     if (!country.trim() || !experience.trim() || !userName.trim()) {
@@ -137,11 +140,33 @@ export function CommunitySection() {
     setIsSubmitting(true)
 
     try {
-      // Add to database
+      // First check content with moderation API
+      console.log("Sending content for moderation:", experience.substring(0, 50) + (experience.length > 50 ? "..." : ""));
+      const moderationResult = await moderateContent(experience.trim())
+      console.log("Moderation result:", moderationResult);
+      
+      if (!moderationResult.success) {
+        setError(moderationResult.error || "Failed to moderate content. Please try again.")
+        setIsSubmitting(false);
+        return
+      }
+      
+      // If content is flagged, show moderation error and stop submission
+      if (moderationResult.flagged) {
+        setModerationError({
+          flagged: true,
+          reasons: moderationResult.reasons
+        })
+        setIsSubmitting(false);
+        return
+      }
+      
+      // Content passed moderation, proceed with submission
       const result = await addExperience({
         country: country.trim(),
         experience: experience.trim(),
         userName: userName.trim(),
+        moderationPassed: true
       })
 
       if (result.success) {
@@ -239,6 +264,21 @@ export function CommunitySection() {
               </div>
             )}
 
+            {moderationError && moderationError.flagged && (
+              <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg text-orange-600 text-sm flex items-start gap-2">
+                <Ban className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Your content has been flagged for inappropriate content:</p>
+                  <ul className="list-disc list-inside mt-1">
+                    {moderationError.reasons.map((reason, index) => (
+                      <li key={index}>{reason}</li>
+                    ))}
+                  </ul>
+                  <p className="mt-1">Please revise your experience to comply with community guidelines.</p>
+                </div>
+              </div>
+            )}
+            
             <Button
               type="submit"
               className="w-full bg-[#FF6B6B] hover:bg-[#FF9E9E] text-white py-6 rounded-xl text-lg flex items-center justify-center gap-2"

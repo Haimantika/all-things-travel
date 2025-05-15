@@ -57,6 +57,7 @@ export async function addExperience(data: {
   country: string
   experience: string
   userName: string
+  moderationPassed?: boolean
 }): Promise<{ success: boolean; error?: string; experience?: Experience }> {
   try {
     const initResult = await ensureInitialized()
@@ -81,6 +82,16 @@ export async function addExperience(data: {
         success: false,
         error: "Experience is too long (maximum 500 characters)",
       }
+    }
+
+    // Security check: log if no moderation was performed
+    if (data.moderationPassed !== true) {
+      console.warn(
+        "WARNING: Experience being submitted without moderation confirmation.",
+        { 
+          experience: data.experience.substring(0, 50) + (data.experience.length > 50 ? "..." : "")
+        }
+      );
     }
 
     // Insert the new experience
