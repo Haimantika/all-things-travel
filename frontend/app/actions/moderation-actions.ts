@@ -16,121 +16,15 @@ const PROFANITY_PATTERNS = [
   /\bc+u+n+t+\w*\b/i
 ];
 
-// Obvious gibberish patterns
-const GIBBERISH_PATTERNS = [
-  /(\w)\1{5,}/,                   // 6+ of the same character in a row
-  /[^\w\s.,!?;:'"()]{4,}/,        // 4+ special characters in a row
-  /[qwfpgjluyxzcbnm]{6,}/i,       // 6+ keyboard mash characters in a row
-  /^[a-z]{1,2}[a-z0-9]{6,}$/i,    // Random short word followed by random characters
-  /^[^\s]{1,2}[^\s]{6,}$/         // Any short prefix followed by gibberish
-];
-
-// Known good phrases that should never be flagged
-const ALLOWED_PHRASES = [
+// Whitelist of allowed phrases that might otherwise be flagged
+const WHITELISTED_PHRASES = [
   "lovely city",
   "what a vibe",
-  "great place",
-  "beautiful"
+  "great place"
 ];
 
 /**
- * Check if content is most likely gibberish based on simplified rules
- * @param content Text to check
- * @param fieldType Type of field being checked
- * @returns Object with validation result
- */
-function validateContent(content: string, fieldType: string): { valid: boolean, reason?: string } {
-  // Allow very short content
-  if (content.length <= 3) {
-    return { valid: true };
-  }
-  
-  // Check for profanity in all fields
-  for (const pattern of PROFANITY_PATTERNS) {
-    if (pattern.test(content)) {
-      return {
-        valid: false,
-        reason: "Profanity"
-      };
-    }
-  }
-  
-  // For name and location fields, only check for obvious problems
-  if (fieldType === 'country' || fieldType === 'name') {
-    // For country names, basic validations are enough
-    if (content.length > 40) {
-      return {
-        valid: false,
-        reason: "Name too long"
-      };
-    }
-    
-    // Very simple gibberish check for location/name
-    if (/^[a-z]{1,2}[a-z]{5,}$/i.test(content) && !/\s/.test(content)) {
-      return {
-        valid: false,
-        reason: "Invalid text pattern"
-      };
-    }
-    
-    // Otherwise consider it valid
-    return { valid: true };
-  }
-  
-  // For experiences, check known good phrases first
-  const lowercaseContent = content.toLowerCase();
-  for (const phrase of ALLOWED_PHRASES) {
-    if (lowercaseContent.includes(phrase)) {
-      return { valid: true };
-    }
-  }
-  
-  // If it's a normal-looking short sentence with punctuation, consider it valid
-  if (/^[A-Z][^.!?]*[.!?](\s+[A-Z][^.!?]*[.!?])*$/.test(content)) {
-    return { valid: true };
-  }
-  
-  // For obvious gibberish in experience field
-  for (const pattern of GIBBERISH_PATTERNS) {
-    if (pattern.test(content)) {
-      return {
-        valid: false,
-        reason: "Gibberish detected"
-      };
-    }
-  }
-  
-  // Check for random character sequences
-  if (content.length > 5) {
-    // If experience is just a jumble of a few letters without spaces, flag it
-    if (content.length < 10 && !/\s/.test(content) && !/^[A-Za-z]+$/.test(content)) {
-      return {
-        valid: false,
-        reason: "Random character sequence"
-      };
-    }
-    
-    // Catch "saasda" style gibberish - short words with no meaning
-    if (content.length < 15 && !/\s/.test(content) && !/[.!?]/.test(content)) {
-      // Check if it looks like a random short word
-      const vowels = (content.match(/[aeiou]/gi) || []).length;
-      const consonants = content.length - vowels;
-      
-      // If there's a strange vowel-consonant ratio, flag it
-      if (vowels === 0 || consonants === 0 || vowels > consonants * 3 || consonants > vowels * 3) {
-        return {
-          valid: false,
-          reason: "Suspicious text pattern"
-        };
-      }
-    }
-  }
-  
-  return { valid: true };
-}
-
-/**
- * Moderates content using both local checks and OpenAI's moderation API when available
+ * Moderates content using OpenAI's moderation API with local fallback
  * @param content The text content to be moderated
  * @param fieldType The type of field being moderated (affects strictness)
  * @returns Response object with flagged status and reasons if any
@@ -147,32 +41,125 @@ export async function moderateContent(
       reasons: []
     };
   }
+
+  const trimmedContent = content.trim();
+  const lowerContent = trimmedContent.toLowerCase();
   
-  // Run local validation first as a quick check
-  const localCheck = validateContent(content.trim(), fieldType);
-  if (!localCheck.valid) {
-    console.log(`Content flagged by local validation: ${localCheck.reason}`);
+  // Check if content is whitelisted
+  for (const phrase of WHITELISTED_PHRASES) {
+    if (lowerContent.includes(phrase)) {
+      // Skip further checks for whitelisted phrases
+      return {
+        success: true,
+        flagged: false,
+        reasons: []
+      };
+    }
+  }
+  
+  // For all fields, check profanity
+  for (const pattern of PROFANITY_PATTERNS) {
+    if (pattern.test(trimmedContent)) {
+      return {
+        success: true,
+        flagged: true,
+        reasons: ["Profanity"]
+      };
+    }
+  }
+  
+  // For name and country fields, simple validation is enough
+  if (fieldType === 'name' || fieldType === 'country') {
+    // Just check for very long fields or special characters
+    if (trimmedContent.length > 50) {
+      return {
+        success: true,
+        flagged: true,
+        reasons: [`${fieldType === 'name' ? 'Name' : 'Location'} is too long`]
+      };
+    }
+    
+    // Only catch obviously problematic inputs in these fields
+    if (/[^\w\s.,'\-()]/i.test(trimmedContent)) {
+      return {
+        success: true,
+        flagged: true,
+        reasons: [`${fieldType === 'name' ? 'Name' : 'Location'} contains invalid characters`]
+      };
+    }
+    
+    // Names and locations pass basic validation
+    return {
+      success: true,
+      flagged: false,
+      reasons: []
+    };
+  }
+  
+  // Additional checks for experience field
+  
+  // 1. Short nonsense text check (catches "saasda" and similar)
+  // This specifically targets the issue with short random text
+  if (trimmedContent.length < 15 && !trimmedContent.includes(" ") && !/[.!?]/.test(trimmedContent)) {
+    // Check for gibberish patterns in short text
+    // This is specially designed to catch "saasda" type inputs
+    
+    // No spaces, no punctuation, just a short string of letters - likely gibberish
+    if (/^[a-z]+$/i.test(trimmedContent)) {
+      const vowels = (trimmedContent.match(/[aeiou]/gi) || []).length;
+      const consonants = trimmedContent.length - vowels;
+      
+      // Strange consonant/vowel distribution suggests gibberish
+      if (vowels === 0 || consonants === 0 || vowels > 2 * consonants || consonants > 2 * vowels) {
+        return {
+          success: true,
+          flagged: true,
+          reasons: ["Text appears to be gibberish"]
+        };
+      }
+    }
+    
+    // Special case: 1-2 characters that aren't common abbreviations
+    if (trimmedContent.length <= 2 && !/^(ok|hi|no|us|uk|eu|un|am|pm)$/i.test(trimmedContent)) {
+      return {
+        success: true,
+        flagged: true,
+        reasons: ["Text is too short"]
+      };
+    }
+  }
+  
+  // 2. Checking for keyboard mashing
+  if (/([qwfpgjluy]{5,}|[zxcvbnm]{5,}|[asdfghjkl]{5,})/i.test(trimmedContent)) {
     return {
       success: true,
       flagged: true,
-      reasons: [localCheck.reason || "Inappropriate content"]
+      reasons: ["Keyboard mashing detected"]
     };
   }
-
-  // Check for OpenAI API key
+  
+  // 3. Check for repeating characters (like 'aaaaaa')
+  if (/(.)\1{4,}/i.test(trimmedContent)) {
+    return {
+      success: true,
+      flagged: true,
+      reasons: ["Repeating characters detected"]
+    };
+  }
+  
+  // All local checks passed, try the API if available
   if (!process.env.OPENAI_API_KEY) {
-    console.error("OPENAI_API_KEY is not set in environment variables");
     return {
       success: true,
       flagged: false,
       reasons: [],
-      error: "API key not configured, using local validation only."
+      error: "API key not configured, using local validation only"
     };
   }
 
-  // If we have OpenAI API key, use it as an additional check
+  // If we have an API key, send to OpenAI for additional checking
   try {
-    console.log("Sending to OpenAI moderation API:", content.substring(0, 50) + (content.length > 50 ? "..." : ""));
+    console.log("Sending to OpenAI moderation API:", trimmedContent.substring(0, 50) + (trimmedContent.length > 50 ? "..." : ""));
     
     const response = await fetch("https://api.openai.com/v1/moderations", {
       method: "POST",
@@ -181,7 +168,7 @@ export async function moderateContent(
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        input: content,
+        input: trimmedContent,
       }),
       cache: 'no-store',
     });
@@ -190,7 +177,7 @@ export async function moderateContent(
       const errorData = await response.json().catch(() => ({}));
       console.error("Moderation API error:", errorData);
       
-      // API failed, but we already ran local validation as backup
+      // API failed, but we've already passed local validation
       return {
         success: true,
         flagged: false,
@@ -229,7 +216,7 @@ export async function moderateContent(
   } catch (error) {
     console.error("Error calling moderation API:", error);
     
-    // Even if API call fails, we've already done local validation
+    // API failed, but we've already passed local validation
     return {
       success: true,
       flagged: false,
