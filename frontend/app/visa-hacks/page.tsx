@@ -25,7 +25,7 @@ export default function VisaHacksPage() {
 
           <div className="relative z-10 max-w-3xl mx-auto">
             <h1 className="text-3xl md:text-5xl font-bold text-[#333] mb-2 md:mb-4 leading-tight text-center">
-              Travel smart <span className="text-[#FF6B6B]">freedom</span> 🌏
+              Travel smart <span className="text-[#FF6B6B]"></span> 🌏
             </h1>
             <p className="text-base md:text-lg text-[#333] mb-4 md:mb-8 text-center">
               Learn where your Indian passport can take you, with the visas you already have!
