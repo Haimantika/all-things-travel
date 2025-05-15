@@ -300,8 +300,8 @@ export function CommunitySection() {
                 <Ban className="h-4 w-4 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="font-medium">
-                    {moderationError.field === 'country' && "The content you entered contains inappropriate content:"}
-                    {moderationError.field === 'name' && "The name you entered contains inappropriate content:"}
+                    {moderationError.field === 'country' && "The comment you entered contains inappropriate content:"}
+                    {moderationError.field === 'name' && "The comment you entered contains inappropriate content:"}
                     {moderationError.field === 'experience' && "Your experience contains inappropriate content:"}
                     {!moderationError.field && "Your content has been flagged for inappropriate content:"}
                   </p>
@@ -311,9 +311,6 @@ export function CommunitySection() {
                     ))}
                   </ul>
                   <p className="mt-1">
-                    {moderationError.field === 'country' && "Please enter a valid location name."}
-                    {moderationError.field === 'name' && "Please enter a valid name."}
-                    {moderationError.field === 'experience' && "Please revise your experience to comply with community guidelines."}
                     {!moderationError.field && "Please revise your content to comply with community guidelines."}
                   </p>
                 </div>
