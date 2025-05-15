@@ -131,9 +131,13 @@ function localContentValidation(content: string): { valid: boolean, reason?: str
 /**
  * Moderates content using OpenAI's moderation API with local fallback
  * @param content The text content to be moderated
+ * @param fieldType The type of field being moderated (affects strictness)
  * @returns Response object with flagged status and reasons if any
  */
-export async function moderateContent(content: string): Promise<ModerationResponse> {
+export async function moderateContent(
+  content: string, 
+  fieldType: 'country' | 'name' | 'experience' | 'general' = 'general'
+): Promise<ModerationResponse> {
   // Early check for empty content
   if (!content || content.trim().length === 0) {
     return {
@@ -142,7 +146,51 @@ export async function moderateContent(content: string): Promise<ModerationRespon
       reasons: []
     };
   }
+
+  // Only check for profanity in location and name fields, not complex gibberish patterns
+  if (fieldType === 'country' || fieldType === 'name') {
+    // Only check for profanity in these fields
+    for (const pattern of PROFANITY_PATTERNS) {
+      if (pattern.test(content)) {
+        console.log(`Profanity found in ${fieldType} field: ${content}`);
+        return {
+          success: true,
+          flagged: true,
+          reasons: ["Profanity"]
+        };
+      }
+    }
+    
+    // Validate location name length (most real locations aren't extremely long)
+    if (fieldType === 'country' && content.length > 50) {
+      return {
+        success: true,
+        flagged: true,
+        reasons: ["Location name is unusually long"]
+      };
+    }
+    
+    // For names, only check for obvious gibberish
+    if (fieldType === 'name') {
+      // Some simple checks for names (no numbers, no excessive special chars)
+      if (/\d{3,}/.test(content) || /[^\w\s.,\-']{2,}/.test(content)) {
+        return {
+          success: true,
+          flagged: true,
+          reasons: ["Name contains invalid characters"]
+        };
+      }
+    }
+    
+    // For location and name fields, we're more lenient, so pass validation
+    return {
+      success: true,
+      flagged: false,
+      reasons: []
+    };
+  }
   
+  // For experience field or general content, use full validation
   // Run local validation first as a quick check
   const localCheck = localContentValidation(content);
   if (!localCheck.valid) {

@@ -148,8 +148,8 @@ export function CommunitySection() {
       const allContent = `${country.trim()} ${userName.trim()} ${experience.trim()}`;
       console.log("Sending all content for moderation:", allContent.substring(0, 50) + (allContent.length > 50 ? "..." : ""));
       
-      // Check for gibberish in location or name
-      const countryModerationResult = await moderateContent(country.trim());
+      // Check for gibberish in location or name with less strict rules
+      const countryModerationResult = await moderateContent(country.trim(), 'country');
       if (!countryModerationResult.success || countryModerationResult.flagged) {
         setModerationError({
           flagged: true,
@@ -160,7 +160,7 @@ export function CommunitySection() {
         return;
       }
       
-      const nameModerationResult = await moderateContent(userName.trim());
+      const nameModerationResult = await moderateContent(userName.trim(), 'name');
       if (!nameModerationResult.success || nameModerationResult.flagged) {
         setModerationError({
           flagged: true,
@@ -171,8 +171,8 @@ export function CommunitySection() {
         return;
       }
       
-      // Check experience content
-      const experienceModerationResult = await moderateContent(experience.trim())
+      // Check experience content with full moderation
+      const experienceModerationResult = await moderateContent(experience.trim(), 'experience')
       console.log("Experience moderation result:", experienceModerationResult);
       
       if (!experienceModerationResult.success) {
@@ -300,8 +300,8 @@ export function CommunitySection() {
                 <Ban className="h-4 w-4 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="font-medium">
-                    {moderationError.field === 'country' && "The comment you entered contains inappropriate content:"}
-                    {moderationError.field === 'name' && "The comment you entered contains inappropriate content:"}
+                    {moderationError.field === 'country' && "The location you entered contains inappropriate content:"}
+                    {moderationError.field === 'name' && "The name you entered contains inappropriate content:"}
                     {moderationError.field === 'experience' && "Your experience contains inappropriate content:"}
                     {!moderationError.field && "Your content has been flagged for inappropriate content:"}
                   </p>
@@ -311,6 +311,9 @@ export function CommunitySection() {
                     ))}
                   </ul>
                   <p className="mt-1">
+                    {moderationError.field === 'country' && "Please enter a valid location name."}
+                    {moderationError.field === 'name' && "Please enter a valid name."}
+                    {moderationError.field === 'experience' && "Please revise your experience to comply with community guidelines."}
                     {!moderationError.field && "Please revise your content to comply with community guidelines."}
                   </p>
                 </div>
