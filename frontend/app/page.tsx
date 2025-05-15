@@ -1,6 +1,6 @@
 "use client"
 import { Button } from "@/components/ui/button"
-import { Compass, MapPin, Plane, Globe, StampIcon as Passport, CalendarRange, Backpack, Calendar } from "lucide-react"
+import { Compass, MapPin, Plane, Globe, StampIcon as Passport, CalendarRange, Backpack, Calendar, Stamp } from "lucide-react"
 import { useState } from "react"
 import { countryNameToCode } from "@/lib/countries"
 import { VisaInfoCard } from "@/components/visa-info-card"
@@ -11,6 +11,7 @@ import { specialVisaCases } from "@/lib/special-visa-cases"
 import { TravelPlanCard } from "@/components/travel-plan-card"
 import { generateTravelPlan } from "@/app/actions/generate-travel-plan"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import Link from "next/link"
 
 export default function Home() {
   const [passportCountry, setPassportCountry] = useState("")
@@ -393,13 +394,42 @@ export default function Home() {
             </p>
           </div>
         </div>
+
+        {/* Special Feature for Indian Passport Holders */}
+        <div className="mt-12 bg-blue-50 p-6 rounded-3xl relative overflow-hidden border border-blue-100">
+          <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-blue-200 rounded-full opacity-40"></div>
+          
+          <div className="flex flex-col md:flex-row items-center gap-6 relative z-10">
+            <div className="md:w-1/4 flex justify-center">
+              <div className="w-24 h-24 bg-blue-500 rounded-full flex items-center justify-center">
+                <Stamp className="h-12 w-12 text-white" />
+              </div>
+            </div>
+            
+            <div className="md:w-3/4 text-center md:text-left">
+              <div className="inline-block bg-blue-200 text-blue-800 px-3 py-1 rounded-full text-xs font-medium mb-2">
+                For Indian Passport Holders
+              </div>
+              <h3 className="text-xl md:text-2xl font-bold text-blue-800 mb-2">Special visa tips for Indians</h3>
+              <p className="text-blue-700 mb-4">
+                Did you know your US, UK, or Schengen visa can give you access to 
+                multiple other countries without additional visas?
+              </p>
+              <Link href="/visa-hacks" passHref>
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  Find more!
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Fun Footer */}
       <footer className="bg-[#333] text-white py-6 md:py-8">
         <div className="container mx-auto px-4 text-center">
           <div className="flex justify-center gap-4 mb-4">
-            {["🌍", "🧳", "🗺️", "���️", "✈️"].map((emoji, index) => (
+            {["🌍", "🧳", "🗺️","🏖️","✈️"].map((emoji, index) => (
               <div key={index} className="text-xl md:text-2xl">
                 {emoji}
               </div>
