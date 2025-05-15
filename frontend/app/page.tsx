@@ -1,6 +1,6 @@
 "use client"
 import { Button } from "@/components/ui/button"
-import { Compass, MapPin, Plane, Globe, StampIcon as Passport } from "lucide-react"
+import { Compass, MapPin, Plane, Globe, StampIcon as Passport, CalendarRange, Backpack, Calendar } from "lucide-react"
 import { useState } from "react"
 import { countryNameToCode } from "@/lib/countries"
 import { VisaInfoCard } from "@/components/visa-info-card"
@@ -8,7 +8,9 @@ import { Header } from "@/components/header"
 import { SimpleCountryDropdown } from "@/components/simple-country-dropdown"
 import { MobileNavigation } from "@/components/mobile-navigation"
 import { specialVisaCases } from "@/lib/special-visa-cases"
-import { findSpecialVisaCase } from "@/lib/special-visa-cases"
+import { TravelPlanCard } from "@/components/travel-plan-card"
+import { generateTravelPlan } from "@/app/actions/generate-travel-plan"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function Home() {
   const [passportCountry, setPassportCountry] = useState("")
@@ -18,18 +20,58 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [additionalInfo, setAdditionalInfo] = useState<string | null>(null)
+  const [showPlanner, setShowPlanner] = useState(false)
+  const [plannerLoading, setPlannerLoading] = useState(false)
+  const [travelPlanContent, setTravelPlanContent] = useState<string | null>(null)
+  const [tripDuration, setTripDuration] = useState("3")
+  const [visitMonth, setVisitMonth] = useState("")
+
+  // Helper function to normalize country names for comparison
+  const normalizeCountry = (country: string): string => {
+    return country.trim().toLowerCase()
+  }
 
   // Function to find special visa case information
   const findSpecialCaseInfo = (passport: string, from: string, to: string): string | null => {
-    // Use the existing function from special-visa-cases.ts
-    const specialCase = findSpecialVisaCase(passport, from, to)
-    
-    if (specialCase) {
-      console.log('Found special case:', specialCase.description)
-      return specialCase.description
+    // Normalize the input countries
+    const normalizedPassport = normalizeCountry(passport)
+    const normalizedFrom = normalizeCountry(from)
+    const normalizedTo = normalizeCountry(to)
+
+    // Check each special case
+    for (const specialCase of specialVisaCases) {
+      // Normalize the special case countries
+      const casePassport = normalizeCountry(specialCase.passportCountry)
+      const caseFrom = normalizeCountry(specialCase.fromCountry)
+      const caseTo = normalizeCountry(specialCase.toCountry)
+
+      // Check for matches with normalization
+      const passportMatch = casePassport === normalizedPassport || casePassport === "any"
+      const fromMatch = caseFrom === normalizedFrom || caseFrom === "any"
+      const toMatch = caseTo === normalizedTo
+
+      if (passportMatch && fromMatch && toMatch) {
+        return specialCase.description
+      }
     }
 
-    console.log('No special case found for:', { passport, from, to })
+    // Fallback to direct checks for critical cases with normalization
+    if (
+      normalizedPassport === "india" &&
+      normalizedFrom === "united states" &&
+      normalizedTo === "united arab emirates"
+    ) {
+      return "Indian passport holders with a valid US visa can get a visa on arrival in the UAE for up to 14 days."
+    }
+
+    if (normalizedPassport === "india" && normalizedTo === "thailand") {
+      return "Indian passport holders can apply for visa on arrival in Thailand for tourism purposes (up to 15 days)."
+    }
+
+    if (normalizedTo === "turkey" && (normalizedFrom === "united states" || normalizedFrom === "united kingdom")) {
+      return "Travelers with a valid Schengen, UK, or US visa may be eligible for an e-Visa or visa on arrival in Turkey."
+    }
+
     return null
   }
 
@@ -50,6 +92,8 @@ export default function Home() {
     // Reset previous results
     setError(null)
     setVisaInfo(null)
+    setShowPlanner(false)
+    setTravelPlanContent(null)
     setIsLoading(true)
 
     // Find special case information BEFORE API call
@@ -69,6 +113,8 @@ export default function Home() {
             const response = JSON.parse(this.responseText)
             setVisaInfo(response)
             setIsLoading(false)
+            // Show the planner section after visa info is loaded
+            setShowPlanner(true)
           } catch (e) {
             console.error("Error parsing API response:", e)
             setError("Failed to parse visa information. Please try again.")
@@ -102,6 +148,58 @@ export default function Home() {
     )
     return foundCountry ? countryNameToCode[foundCountry] : null
   }
+
+  // Function to handle the "Help me plan" button click
+  const handlePlanTrip = async () => {
+    if (!toLocation) {
+      setError("Destination country is required")
+      return
+    }
+
+    if (!tripDuration) {
+      setError("Please select how long your trip will be")
+      return
+    }
+
+    if (!visitMonth) {
+      setError("Please select which month you're visiting")
+      return
+    }
+
+    setPlannerLoading(true)
+    setError(null)
+
+    try {
+      // Call the server action to generate a travel plan using your DigitalOcean GenAI agent
+      // Pass the trip duration and visit month to the server action
+      const content = await generateTravelPlan(toLocation, Number.parseInt(tripDuration), visitMonth)
+      setTravelPlanContent(content)
+      setPlannerLoading(false)
+    } catch (error) {
+      console.error("Error generating travel plan:", error)
+      setError(error instanceof Error ? error.message : "Failed to generate travel plan. Please try again.")
+      setPlannerLoading(false)
+    }
+  }
+
+  // Array of months for the dropdown
+  const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ]
+
+  // Array of trip durations for the dropdown
+  const durations = ["1", "2", "3", "4", "5", "6", "7", "10", "14", "21", "30"]
 
   return (
     <div className="min-h-screen bg-[#FFF8E1] pb-16 md:pb-0">
@@ -178,6 +276,81 @@ export default function Home() {
 
             {/* Visa Information Card */}
             {visaInfo && <VisaInfoCard {...visaInfo} additionalInfo={additionalInfo} />}
+
+            {/* Trip Planner Section - Only shown after visa info is loaded */}
+            {showPlanner && (
+              <div className="mt-6 bg-white p-6 rounded-xl shadow-lg">
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold text-[#333] mb-2">Ready to plan your trip to {toLocation}?</h2>
+                  <p className="text-[#666] mb-6">
+                    Let our AI help you create a personalized itinerary and packing list for your adventure!
+                  </p>
+
+                  {/* Trip Duration and Visit Month Fields */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 items-center">
+                    <div className="flex flex-row items-center gap-4">
+                      <label htmlFor="tripDuration" className="text-sm font-medium text-[#666] mb-0 min-w-max">
+                        Length of your trip
+                      </label>
+                      <div className="relative flex-1">
+                        <div className="absolute left-3 top-3">
+                          <CalendarRange className="h-5 w-5 text-[#4ECDC4]" />
+                        </div>
+                        <Select value={tripDuration} onValueChange={setTripDuration}>
+                          <SelectTrigger className="pl-10 pr-4 py-6 rounded-xl border-[#4ECDC4] focus:border-[#4ECDC4] w-full">
+                            <SelectValue placeholder="Select number of days" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {durations.map((days) => (
+                              <SelectItem key={days} value={days}>
+                                {days} {Number.parseInt(days) === 1 ? "day" : "days"}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-row items-center gap-4">
+                      <label htmlFor="visitMonth" className="text-sm font-medium text-[#666] mb-0 min-w-max">
+                        Month of visit
+                      </label>
+                      <div className="relative flex-1">
+                        <div className="absolute left-3 top-3">
+                          <Calendar className="h-5 w-5 text-[#FFD166]" />
+                        </div>
+                        <Select value={visitMonth} onValueChange={setVisitMonth}>
+                          <SelectTrigger className="pl-10 pr-4 py-6 rounded-xl border-[#FFD166] focus:border-[#FFD166] w-full">
+                            <SelectValue placeholder="Select month" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {months.map((month) => (
+                              <SelectItem key={month} value={month}>
+                                {month}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-center gap-4">
+                  <Button
+                    className="bg-[#4ECDC4] hover:bg-[#3DBCB4] text-white py-3 px-6 rounded-xl text-base flex items-center gap-2"
+                    onClick={handlePlanTrip}
+                    disabled={plannerLoading}
+                  >
+                    <CalendarRange className="h-5 w-5" />
+                    {plannerLoading ? "Creating your plan..." : "Help me plan my trip!"}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Travel Plan Card */}
+            {travelPlanContent && <TravelPlanCard destination={toLocation} content={travelPlanContent} />}
           </div>
         </div>
       </section>
@@ -212,22 +385,7 @@ export default function Home() {
 
           <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg transform hover:scale-105 transition-transform border-t-8 border-[#FFD166]">
             <div className="w-16 h-16 bg-[#FFD166] rounded-full flex items-center justify-center mb-4 mx-auto">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-8 w-8 text-white"
-              >
-                <path d="M9 5H2v7l6.29 6.29c.94.94 2.48.94 3.42 0l3.58-3.58c.94-.94.94-2.48 0-3.42L9 5Z"></path>
-                <path d="M6 9.01V9"></path>
-                <path d="m15 5 6.3 6.3a2.4 2.4 0 0 1 0 3.4L17 19"></path>
-              </svg>
+              <Backpack className="h-8 w-8 text-white" />
             </div>
             <h3 className="text-lg md:text-xl font-bold mb-2 text-center text-[#333]">Packing guide</h3>
             <p className="text-sm md:text-base text-[#666] text-center">
@@ -241,7 +399,7 @@ export default function Home() {
       <footer className="bg-[#333] text-white py-6 md:py-8">
         <div className="container mx-auto px-4 text-center">
           <div className="flex justify-center gap-4 mb-4">
-            {["🌍", "🧳", "🗺️", "🏖️", "✈️"].map((emoji, index) => (
+            {["🌍", "🧳", "🗺️", "���️", "✈️"].map((emoji, index) => (
               <div key={index} className="text-xl md:text-2xl">
                 {emoji}
               </div>
@@ -257,6 +415,8 @@ export default function Home() {
     </div>
   )
 }
+
+
 
 
 
