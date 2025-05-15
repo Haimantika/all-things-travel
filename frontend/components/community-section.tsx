@@ -184,13 +184,13 @@ export function CommunitySection() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label htmlFor="country" className="block text-sm font-medium text-[#666] mb-1">
-                  Country
+                  Country/City
                 </label>
                 <div className="relative">
                   <Globe className="absolute left-3 top-3 h-5 w-5 text-[#FF6B6B]" />
                   <Input
                     id="country"
-                    placeholder="Which country did you visit?"
+                    placeholder="Which country/city did you visit?"
                     className="pl-10 pr-4 py-6 rounded-xl border-[#FFD166] focus:border-[#FF6B6B]"
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
