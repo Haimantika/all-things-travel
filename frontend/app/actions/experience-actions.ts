@@ -94,15 +94,36 @@ export async function addExperience(data: {
       );
     }
 
-    // Insert the new experience
-    const result = await query(
-      "INSERT INTO experiences (country, experience, user_name, moderation_passed) VALUES ($1, $2, $3, $4) RETURNING *",
-      [data.country, data.experience, data.userName, !!data.moderationPassed],
-    )
-
-    return {
-      success: true,
-      experience: result.rows[0],
+    // Try to insert with moderation_passed column first
+    try {
+      const result = await query(
+        "INSERT INTO experiences (country, experience, user_name, moderation_passed) VALUES ($1, $2, $3, $4) RETURNING *",
+        [data.country, data.experience, data.userName, !!data.moderationPassed],
+      )
+      
+      return {
+        success: true,
+        experience: result.rows[0],
+      }
+    } catch (columnError: any) {
+      // If error mentions moderation_passed column, fall back to insertion without it
+      if (columnError.message && columnError.message.includes("moderation_passed")) {
+        console.warn("Column 'moderation_passed' does not exist, falling back to basic insertion");
+        
+        // Fallback: insert without the moderation_passed column
+        const fallbackResult = await query(
+          "INSERT INTO experiences (country, experience, user_name) VALUES ($1, $2, $3) RETURNING *",
+          [data.country, data.experience, data.userName],
+        )
+        
+        return {
+          success: true,
+          experience: fallbackResult.rows[0],
+        }
+      } else {
+        // If it's some other error, rethrow it
+        throw columnError;
+      }
     }
   } catch (error) {
     console.error("Error adding experience:", error)
