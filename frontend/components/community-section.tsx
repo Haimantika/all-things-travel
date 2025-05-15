@@ -41,7 +41,11 @@ export function CommunitySection() {
   // State for form validation
   const [error, setError] = useState<string | null>(null)
   const [dbError, setDbError] = useState<string | null>(null)
-  const [moderationError, setModerationError] = useState<{ flagged: boolean; reasons: string[] } | null>(null)
+  const [moderationError, setModerationError] = useState<{ 
+    flagged: boolean; 
+    reasons: string[];
+    field?: 'country' | 'name' | 'experience';
+  } | null>(null)
 
   // State for submission loading
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -140,28 +144,55 @@ export function CommunitySection() {
     setIsSubmitting(true)
 
     try {
-      // First check content with moderation API
-      console.log("Sending content for moderation:", experience.substring(0, 50) + (experience.length > 50 ? "..." : ""));
-      const moderationResult = await moderateContent(experience.trim())
-      console.log("Moderation result:", moderationResult);
+      // Validate and moderate all input fields
+      const allContent = `${country.trim()} ${userName.trim()} ${experience.trim()}`;
+      console.log("Sending all content for moderation:", allContent.substring(0, 50) + (allContent.length > 50 ? "..." : ""));
       
-      if (!moderationResult.success) {
-        setError(moderationResult.error || "Failed to moderate content. Please try again.")
+      // Check for gibberish in location or name
+      const countryModerationResult = await moderateContent(country.trim());
+      if (!countryModerationResult.success || countryModerationResult.flagged) {
+        setModerationError({
+          flagged: true,
+          reasons: countryModerationResult.flagged ? countryModerationResult.reasons : ["Invalid location text"],
+          field: 'country'
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      const nameModerationResult = await moderateContent(userName.trim());
+      if (!nameModerationResult.success || nameModerationResult.flagged) {
+        setModerationError({
+          flagged: true,
+          reasons: nameModerationResult.flagged ? nameModerationResult.reasons : ["Invalid name text"],
+          field: 'name'
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Check experience content
+      const experienceModerationResult = await moderateContent(experience.trim())
+      console.log("Experience moderation result:", experienceModerationResult);
+      
+      if (!experienceModerationResult.success) {
+        setError(experienceModerationResult.error || "Failed to moderate content. Please try again.")
         setIsSubmitting(false);
         return
       }
       
       // If content is flagged, show moderation error and stop submission
-      if (moderationResult.flagged) {
+      if (experienceModerationResult.flagged) {
         setModerationError({
           flagged: true,
-          reasons: moderationResult.reasons
+          reasons: experienceModerationResult.reasons,
+          field: 'experience'
         })
         setIsSubmitting(false);
         return
       }
       
-      // Content passed moderation, proceed with submission
+      // All content passed moderation, proceed with submission
       const result = await addExperience({
         country: country.trim(),
         experience: experience.trim(),
@@ -268,13 +299,23 @@ export function CommunitySection() {
               <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg text-orange-600 text-sm flex items-start gap-2">
                 <Ban className="h-4 w-4 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium">Your content has been flagged for inappropriate content:</p>
+                  <p className="font-medium">
+                    {moderationError.field === 'country' && "The content you entered contains inappropriate content:"}
+                    {moderationError.field === 'name' && "The name you entered contains inappropriate content:"}
+                    {moderationError.field === 'experience' && "Your experience contains inappropriate content:"}
+                    {!moderationError.field && "Your content has been flagged for inappropriate content:"}
+                  </p>
                   <ul className="list-disc list-inside mt-1">
                     {moderationError.reasons.map((reason, index) => (
                       <li key={index}>{reason}</li>
                     ))}
                   </ul>
-                  <p className="mt-1">Please revise your experience to comply with community guidelines.</p>
+                  <p className="mt-1">
+                    {moderationError.field === 'country' && "Please enter a valid location name."}
+                    {moderationError.field === 'name' && "Please enter a valid name."}
+                    {moderationError.field === 'experience' && "Please revise your experience to comply with community guidelines."}
+                    {!moderationError.field && "Please revise your content to comply with community guidelines."}
+                  </p>
                 </div>
               </div>
             )}

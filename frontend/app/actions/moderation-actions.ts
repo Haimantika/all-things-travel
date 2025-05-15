@@ -19,8 +19,74 @@ const PROFANITY_PATTERNS = [
 // Gibberish detection - repeated characters, excessive special chars, or random strings
 const GIBBERISH_PATTERNS = [
   /(\w)\1{5,}/,  // 6+ of the same character in a row
-  /[^\w\s.,!?;:'"()]{5,}/  // 5+ special characters in a row
+  /[^\w\s.,!?;:'"()]{5,}/,  // 5+ special characters in a row
+  /(?:[bcdfghjklmnpqrstvwxz]{5,})/i,  // 5+ consonants in a row (likely gibberish)
+  /[qwfpgjluyxzcbnm]{7,}/i,  // 7+ common keyboard mash characters
+  /(?:[aeiou]{7,})/i,  // 7+ vowels in a row
+  /(?:[a-z]{4,}[0-9]{4,})/i,  // 4+ letters followed by 4+ numbers
+  /^[a-z]{1,2}[a-z0-9]{7,}$/i,  // Random short word followed by random characters
+  /^(?=.*[g-z])(?=.*[a-f])[a-z]{9,}$/i,  // Long strings with specific character combinations
+  /(?:(?:[^aeiou]{2,}[aeiou]){3,}[^aeiou]{2,})/i  // Specific consonant-vowel pattern common in gibberish
 ];
+
+// Common English dictionary words (partial list for meaningful content check)
+const COMMON_WORDS = new Set([
+  "the", "be", "to", "of", "and", "a", "in", "that", "have", "i", "it", "for", "not", "on", "with", 
+  "he", "as", "you", "do", "at", "this", "but", "his", "by", "from", "they", "we", "say", "her", "she", 
+  "or", "an", "will", "my", "one", "all", "would", "there", "their", "what", "so", "up", "out", "if", 
+  "about", "who", "get", "which", "go", "me", "when", "make", "can", "like", "time", "no", "just", "him",
+  "know", "take", "people", "into", "year", "your", "good", "some", "could", "them", "see", "other", "than",
+  "then", "now", "look", "only", "come", "its", "over", "think", "also", "back", "after", "use", "two",
+  "how", "our", "work", "first", "well", "way", "even", "new", "want", "because", "any", "these", "give",
+  "day", "most", "us", "travel", "place", "visit", "city", "country", "food", "experience", "hotel", 
+  "beach", "mountain", "trip", "vacation"
+]);
+
+/**
+ * Check if text has enough meaningful content
+ * @param content Text to analyze
+ * @returns True if meaningful content is found
+ */
+function hasMeaningfulContent(content: string): boolean {
+  // Ignore very short content from this check
+  if (content.length < 10) return true;
+  
+  // Split text into words and normalize
+  const words = content.toLowerCase().split(/\s+/).map(w => w.replace(/[^a-z]/g, ''));
+  const filteredWords = words.filter(w => w.length > 2); // Only consider words with 3+ chars
+  
+  // At least 15% of words should be common English words for longer content
+  const meaningfulWords = filteredWords.filter(word => COMMON_WORDS.has(word));
+  return meaningfulWords.length >= Math.max(1, filteredWords.length * 0.15);
+}
+
+/**
+ * Check for random characters with no pattern/meaning
+ * @param content Text to analyze
+ * @returns True if text looks random
+ */
+function looksRandom(content: string): boolean {
+  // For shorter content, check consonant-vowel ratio
+  // Normal English has roughly 40% vowels
+  const vowels = (content.match(/[aeiou]/gi) || []).length;
+  const consonants = (content.match(/[bcdfghjklmnpqrstvwxyz]/gi) || []).length;
+  
+  if (consonants + vowels > 0) {
+    const vowelRatio = vowels / (consonants + vowels);
+    // Extreme vowel ratios suggest gibberish
+    if (vowelRatio < 0.1 || vowelRatio > 0.8) {
+      return true;
+    }
+  }
+  
+  // Check for too many repeated characters of different kinds (keyboard mashing)
+  const uniqueChars = new Set(content.toLowerCase()).size;
+  if (content.length > 8 && uniqueChars < content.length * 0.3) {
+    return true;
+  }
+  
+  return false;
+}
 
 /**
  * Simple local content validation as fallback
@@ -38,12 +104,23 @@ function localContentValidation(content: string): { valid: boolean, reason?: str
     }
   }
   
-  // Check for gibberish
+  // Check for gibberish patterns
   for (const pattern of GIBBERISH_PATTERNS) {
     if (pattern.test(content)) {
       return {
         valid: false,
         reason: "Gibberish or suspicious patterns"
+      };
+    }
+  }
+  
+  // More advanced checks for gibberish without clear patterns
+  if (content.length > 7) {
+    // For longer text, verify it has meaningful content
+    if (!hasMeaningfulContent(content) && looksRandom(content)) {
+      return {
+        valid: false, 
+        reason: "Gibberish or nonsense text"
       };
     }
   }

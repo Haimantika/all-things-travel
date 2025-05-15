@@ -96,8 +96,8 @@ export async function addExperience(data: {
 
     // Insert the new experience
     const result = await query(
-      "INSERT INTO experiences (country, experience, user_name) VALUES ($1, $2, $3) RETURNING *",
-      [data.country, data.experience, data.userName],
+      "INSERT INTO experiences (country, experience, user_name, moderation_passed) VALUES ($1, $2, $3, $4) RETURNING *",
+      [data.country, data.experience, data.userName, !!data.moderationPassed],
     )
 
     return {
