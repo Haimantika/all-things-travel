@@ -20,17 +20,18 @@ const PROFANITY_PATTERNS = [
 const GIBBERISH_PATTERNS = [
   /(\w)\1{5,}/,  // 6+ of the same character in a row
   /[^\w\s.,!?;:'"()]{5,}/,  // 5+ special characters in a row
-  /(?:[bcdfghjklmnpqrstvwxz]{5,})/i,  // 5+ consonants in a row (likely gibberish)
-  /[qwfpgjluyxzcbnm]{7,}/i,  // 7+ common keyboard mash characters
-  /(?:[aeiou]{7,})/i,  // 7+ vowels in a row
+  /(?:[bcdfghjklmnpqrstvwxz]{6,})/i,  // 6+ consonants in a row (increased from 5)
+  /[qwfpgjluyxzcbnm]{8,}/i,  // 8+ common keyboard mash characters (increased from 7)
+  /(?:[aeiou]{8,})/i,  // 8+ vowels in a row (increased from 7)
   /(?:[a-z]{4,}[0-9]{4,})/i,  // 4+ letters followed by 4+ numbers
-  /^[a-z]{1,2}[a-z0-9]{7,}$/i,  // Random short word followed by random characters
-  /^(?=.*[g-z])(?=.*[a-f])[a-z]{9,}$/i,  // Long strings with specific character combinations
-  /(?:(?:[^aeiou]{2,}[aeiou]){3,}[^aeiou]{2,})/i  // Specific consonant-vowel pattern common in gibberish
+  /^[a-z]{1,2}[a-z0-9]{8,}$/i,  // Random short word followed by random characters (increased from 7)
+  /^(?=.*[g-z])(?=.*[a-f])[a-z]{10,}$/i,  // Long strings with specific character combinations (increased from 9)
+  /(?:(?:[^aeiou]{3,}[aeiou]){3,}[^aeiou]{3,})/i  // Modified consonant-vowel pattern (increased from 2 to 3)
 ];
 
-// Common English dictionary words (partial list for meaningful content check)
+// Common English dictionary words (expanded list for meaningful content check)
 const COMMON_WORDS = new Set([
+  // Original words
   "the", "be", "to", "of", "and", "a", "in", "that", "have", "i", "it", "for", "not", "on", "with", 
   "he", "as", "you", "do", "at", "this", "but", "his", "by", "from", "they", "we", "say", "her", "she", 
   "or", "an", "will", "my", "one", "all", "would", "there", "their", "what", "so", "up", "out", "if", 
@@ -38,8 +39,30 @@ const COMMON_WORDS = new Set([
   "know", "take", "people", "into", "year", "your", "good", "some", "could", "them", "see", "other", "than",
   "then", "now", "look", "only", "come", "its", "over", "think", "also", "back", "after", "use", "two",
   "how", "our", "work", "first", "well", "way", "even", "new", "want", "because", "any", "these", "give",
-  "day", "most", "us", "travel", "place", "visit", "city", "country", "food", "experience", "hotel", 
-  "beach", "mountain", "trip", "vacation"
+  "day", "most", "us", 
+  
+  // Travel-related words
+  "travel", "place", "visit", "city", "country", "food", "experience", "hotel", 
+  "beach", "mountain", "trip", "vacation", "tour", "sight", "park", "museum", "restaurant",
+  "view", "beautiful", "amazing", "great", "awesome", "love", "loved", "lovely", "nice", "best",
+  
+  // Common adjectives
+  "good", "bad", "big", "small", "happy", "sad", "hot", "cold", "new", "old", "high", "low",
+  "long", "short", "easy", "hard", "fast", "slow", "early", "late", "young", "old", "right", "wrong",
+  "true", "false", "rich", "poor", "strong", "weak", "busy", "free", "safe", "dangerous",
+  
+  // Common verbs
+  "go", "come", "take", "make", "get", "see", "look", "find", "give", "tell", "work", "call", "try",
+  "ask", "need", "feel", "become", "leave", "put", "mean", "keep", "let", "begin", "seem", "help",
+  "talk", "turn", "start", "show", "hear", "play", "run", "move", "live", "believe", "bring",
+  
+  // Common nouns
+  "time", "year", "day", "way", "thing", "man", "woman", "life", "child", "world", "school", "state",
+  "family", "student", "group", "friend", "word", "place", "case", "part", "eye", "job", "week", "system",
+  
+  // Short words that might be part of phrases
+  "am", "is", "are", "was", "were", "has", "had", "does", "did", "can", "could", "will", "would", "should",
+  "may", "might", "must", "ought", "hi", "bye", "vibe", "wow", "yes", "no", "oh", "ah", "hmm", "ok", "okay"
 ]);
 
 /**
@@ -48,16 +71,27 @@ const COMMON_WORDS = new Set([
  * @returns True if meaningful content is found
  */
 function hasMeaningfulContent(content: string): boolean {
-  // Ignore very short content from this check
-  if (content.length < 10) return true;
+  // Short phrases are always considered meaningful
+  if (content.length < 30) return true;
   
+  // For medium-length content, be lenient
+  if (content.length < 50) {
+    // Just check if it has at least one common word or looks like a sentence
+    const words = content.toLowerCase().split(/\s+/).map(w => w.replace(/[^a-z]/g, ''));
+    const hasCommonWord = words.some(word => COMMON_WORDS.has(word));
+    const hasSentenceStructure = /[.?!]/.test(content); // Has punctuation
+    
+    return hasCommonWord || hasSentenceStructure;
+  }
+  
+  // For longer content, do a more thorough check
   // Split text into words and normalize
   const words = content.toLowerCase().split(/\s+/).map(w => w.replace(/[^a-z]/g, ''));
   const filteredWords = words.filter(w => w.length > 2); // Only consider words with 3+ chars
   
-  // At least 15% of words should be common English words for longer content
+  // Lower threshold - now only 10% of words need to be common English
   const meaningfulWords = filteredWords.filter(word => COMMON_WORDS.has(word));
-  return meaningfulWords.length >= Math.max(1, filteredWords.length * 0.15);
+  return meaningfulWords.length >= Math.max(1, filteredWords.length * 0.1);
 }
 
 /**
@@ -66,22 +100,26 @@ function hasMeaningfulContent(content: string): boolean {
  * @returns True if text looks random
  */
 function looksRandom(content: string): boolean {
-  // For shorter content, check consonant-vowel ratio
-  // Normal English has roughly 40% vowels
+  // Don't check short phrases
+  if (content.length < 25) return false;
+  
+  // For longer content, check consonant-vowel ratio
+  // Normal English has roughly 40% vowels, but with more tolerance
   const vowels = (content.match(/[aeiou]/gi) || []).length;
   const consonants = (content.match(/[bcdfghjklmnpqrstvwxyz]/gi) || []).length;
   
-  if (consonants + vowels > 0) {
+  if (consonants + vowels > 10) { // Only check if enough letters to analyze
     const vowelRatio = vowels / (consonants + vowels);
-    // Extreme vowel ratios suggest gibberish
-    if (vowelRatio < 0.1 || vowelRatio > 0.8) {
+    // More extreme vowel ratios to only catch very unusual text
+    if (vowelRatio < 0.05 || vowelRatio > 0.9) {
       return true;
     }
   }
   
   // Check for too many repeated characters of different kinds (keyboard mashing)
+  // Only flag if very extreme ratio of unique chars to length
   const uniqueChars = new Set(content.toLowerCase()).size;
-  if (content.length > 8 && uniqueChars < content.length * 0.3) {
+  if (content.length > 20 && uniqueChars < content.length * 0.2) {
     return true;
   }
   
