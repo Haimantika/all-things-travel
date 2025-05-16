@@ -83,6 +83,11 @@ export default function Home() {
       return
     }
 
+    if (fromLocation && fromLocation === toLocation) {
+      setError("Come on, you need to REALLY travel! Pick a different destination 😉")
+      return
+    }
+
     const passportCode = getCountryCode(passportCountry)
     const toCode = getCountryCode(toLocation)
 
