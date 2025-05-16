@@ -229,6 +229,20 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#FFF8E1] pb-16 md:pb-0">
+      {/* Google Analytics */}
+      <Script
+        src="https://www.googletagmanager.com/gtag/js?id=G-P48LFZFY0M"
+        strategy="afterInteractive"
+      />
+      <Script id="google-analytics" strategy="afterInteractive">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-P48LFZFY0M');
+        `}
+      </Script>
+
       {/* Add structured data */}
       <Script
         id="structured-data"
