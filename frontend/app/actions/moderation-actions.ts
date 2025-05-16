@@ -87,13 +87,63 @@ export async function moderateContent(
         reasons: [`${fieldType === 'name' ? 'Name' : 'Location'} contains invalid characters`]
       };
     }
-    
-    // Names and locations pass basic validation
-    return {
-      success: true,
-      flagged: false,
-      reasons: []
-    };
+
+    // Check for gibberish using the API
+    try {
+      console.log('Checking for gibberish:', trimmedContent);
+      
+      const response = await fetch('https://gibberish-text-detection.p.rapidapi.com/detect', {
+        method: 'POST',
+        headers: {
+          'x-rapidapi-key': process.env.RAPIDAPI_KEY || '',
+          'x-rapidapi-host': 'gibberish-text-detection.p.rapidapi.com',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          text: trimmedContent,
+          language: 'en'
+        })
+      });
+
+      console.log('API Response status:', response.status);
+      
+      if (!response.ok) {
+        console.error('Gibberish detection API error:', response.status);
+        // If API fails, allow the input
+        return {
+          success: true,
+          flagged: false,
+          reasons: []
+        };
+      }
+
+      const data = await response.json();
+      console.log('Gibberish detection response:', data);
+      
+      if (data.isGibberish) {
+        console.log('API detected gibberish');
+        return {
+          success: true,
+          flagged: true,
+          reasons: [`The ${fieldType} you entered appears to be gibberish`]
+        };
+      }
+
+      // Input passed all checks
+      return {
+        success: true,
+        flagged: false,
+        reasons: []
+      };
+    } catch (error) {
+      console.error('Error calling gibberish detection API:', error);
+      // If API fails, allow the input
+      return {
+        success: true,
+        flagged: false,
+        reasons: []
+      };
+    }
   }
   
   // Additional checks for experience field

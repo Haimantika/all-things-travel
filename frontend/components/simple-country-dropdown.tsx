@@ -95,12 +95,12 @@ export function SimpleCountryDropdown({
 
       {/* Dropdown trigger button */}
       <div
-        className="relative w-full flex items-center justify-between pl-10 pr-4 py-6 rounded-xl border border-[#FFD166] focus:border-[#FF6B6B] bg-white hover:bg-white/90 cursor-pointer"
+        className="relative w-full flex items-center justify-between pl-10 pr-4 py-2 rounded-xl border border-[#FFD166] focus:border-[#FF6B6B] bg-white hover:bg-white/90 cursor-pointer h-[52px]"
         onClick={() => setIsOpen(!isOpen)}
       >
         <div className="absolute left-3 top-1/2 transform -translate-y-1/2">{icon}</div>
-        <div className="text-left truncate">{value || placeholder}</div>
-        <div className="flex items-center">
+        <div className="text-left truncate flex-1">{value || placeholder}</div>
+        <div className="flex items-center flex-shrink-0">
           {value && (
             <button type="button" onClick={handleClear} className="mr-2 p-1 rounded-full hover:bg-gray-100">
               <X className="h-4 w-4 text-gray-500" />

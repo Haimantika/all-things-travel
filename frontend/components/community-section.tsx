@@ -10,6 +10,7 @@ import { ExperienceCard } from "@/components/experience-card"
 import { Globe, Send, User, X, Filter, AlertCircle, Loader2, RefreshCw, Database, Ban } from "lucide-react"
 import { getExperiences, addExperience, getCountriesWithCounts } from "@/app/actions/experience-actions"
 import { moderateContent } from "@/app/actions/moderation-actions"
+import { SimpleCountryDropdown } from "@/components/simple-country-dropdown"
 
 // Define the experience type to match the database schema
 export interface TravelerExperience {
@@ -238,33 +239,30 @@ export function CommunitySection() {
 
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
+              <div className="w-full">
                 <label htmlFor="country" className="block text-sm font-medium text-[#666] mb-1">
-                  Country/City
+                  Country
                 </label>
-                <div className="relative">
-                  <Globe className="absolute left-3 top-3 h-5 w-5 text-[#FF6B6B]" />
-                  <Input
-                    id="country"
-                    placeholder="Which country/city did you visit?"
-                    className="pl-10 pr-4 py-6 rounded-xl border-[#FFD166] focus:border-[#FF6B6B]"
+                <div className="relative w-full">
+                  <SimpleCountryDropdown
                     value={country}
-                    onChange={(e) => setCountry(e.target.value)}
-                    disabled={isSubmitting}
+                    onChange={setCountry}
+                    placeholder="Which country did you visit?"
+                    icon={<Globe className="h-5 w-5 text-[#FF6B6B]" />}
                   />
                 </div>
               </div>
 
-              <div>
+              <div className="w-full">
                 <label htmlFor="userName" className="block text-sm font-medium text-[#666] mb-1">
                   Your name
                 </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-3 h-5 w-5 text-[#4ECDC4]" />
+                <div className="relative w-full">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#4ECDC4]" />
                   <Input
                     id="userName"
                     placeholder="What should we call you?"
-                    className="pl-10 pr-4 py-6 rounded-xl border-[#FFD166] focus:border-[#FF6B6B]"
+                    className="w-full pl-10 pr-4 py-6 rounded-xl border-[#FFD166] focus:border-[#FF6B6B]"
                     value={userName}
                     onChange={(e) => setUserName(e.target.value)}
                     disabled={isSubmitting}
