@@ -32,8 +32,20 @@ export default function CommunityPage() {
               </div>
             ))}
           </div>
-          <p className="mb-2 text-sm md:text-base">Made with ❤️ by a fellow travel enthusiast</p>
-          <p className="text-xs md:text-sm text-gray-400">© {new Date().getFullYear()} Nomado</p>
+          <p className="mb-2 text-sm md:text-base">Made with ❤️ by <a href="https://x.com/haimantikam" target="_blank" rel="noopener noreferrer" className="text-[#FF6B6B] hover:underline">Haimantika</a> a fellow travel enthusiast</p>
+          <p className="text-xs md:text-sm text-gray-400 mb-4">© {new Date().getFullYear()} Nomado</p>
+          <div className="border-t border-gray-700 pt-4">
+            <a 
+              href="https://buymeacoffee.com/haimantika" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#FF6B6B] text-white rounded-full hover:bg-[#ff5252] transition-colors duration-200 shadow-lg hover:shadow-xl"
+            >
+              <span className="text-xl">☕</span>
+              <span className="font-medium">Every coffee helps me pay for the APIs!</span>
+            </a>
+            
+          </div>
         </div>
       </footer>
 
