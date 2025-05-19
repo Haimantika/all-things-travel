@@ -141,19 +141,6 @@ export function VisaUnlockCard({ selectedVisas }: VisaUnlockCardProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {/* Map View Button */}
-          <Button 
-            className="w-full bg-[#4ECDC4] hover:bg-[#3DBCB4] mb-4 flex items-center justify-center gap-2"
-            onClick={() => {
-              // Create country list for Google Maps search
-              const countryList = unlockedCountries.map(c => c.toCountry).join('+');
-              window.open(`https://www.google.com/maps/search/${countryList}`, '_blank');
-            }}
-          >
-            <Globe className="h-4 w-4" />
-            View Unlocked Countries on Map
-          </Button>
-
           {Object.entries(countryByVisa).map(([visa, countries]) => (
             <div key={visa} className="border rounded-lg p-4">
               <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
