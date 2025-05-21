@@ -1,6 +1,6 @@
 # Nomado - Your Smart Travel Companion 🌍✈️
 
-Nomado is an application that helps travelers plan their next trips by providing instant visa information, personalized travel itineraries, and having a community where fellow travellers can share their travel stories. Built by a traveller for a traveller. 
+Nomado is an application that helps travellers plan their next trips by providing instant visa information, personalized travel itineraries, and having a community where fellow travellers can share their travel stories. Built by a traveller for a traveller. 
 
 ## Features 🚀
 
