@@ -79,14 +79,16 @@ The application uses DigitalOcean's GenAI agent (powered by Llama 3.3 Instruct) 
    ```
 3. Set up environment variables:
    ```env
+   # Database Configuration
    POSTGRES_HOST=db hostname
    POSTGRES_PORT=db port
    POSTGRES_USER=db usernames
    POSTGRES_PASSWORD=db passwords
    POSTGRES_DATABASE=db name
+
+   # API Keys
    OPENAI_API_KEY=your openai key
    RAPIDAPI_KEY=your rapidaapi key
-   NEXT_PUBLIC_GA_ID= Google Analytics ID
    ```
 4. Run the development server:
    ```bash
