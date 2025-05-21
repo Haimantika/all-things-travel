@@ -99,7 +99,7 @@ Contributions are welcome! Please feel free to open an issue, and then mention h
 
 ## License 📄
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/Haimantika/all-things-travel/blob/main/LICENSE) file for details.
 
 ## Author 👩‍💻
 
