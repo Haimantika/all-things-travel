@@ -111,35 +111,47 @@ export default function Home() {
 
     try {
       const data = `passport=${passportCode}&destination=${toCode}`
-      const xhr = new XMLHttpRequest()
-      xhr.withCredentials = true
+      
+      const response = await fetch("https://visa-requirement.p.rapidapi.com/", {
+        method: 'POST',
+        headers: {
+          'x-rapidapi-key': process.env.NEXT_PUBLIC_RAPIDAPI_KEY || 'a44fe90a4cmsh4069920c797fa54p17fa8bjsnd4baeb96a710',
+          'x-rapidapi-host': 'visa-requirement.p.rapidapi.com',
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: data
+      });
 
-      xhr.addEventListener("readystatechange", function () {
-        if (this.readyState === this.DONE) {
-          try {
-            const response = JSON.parse(this.responseText)
-            setVisaInfo(response)
-            setIsLoading(false)
-            // Show the planner section after visa info is loaded
-            setShowPlanner(true)
-          } catch (e) {
-            console.error("Error parsing API response:", e)
-            setError("Failed to parse visa information. Please try again.")
-            setIsLoading(false)
-          }
+      if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error("API access denied. Please contact support.");
+        } else if (response.status === 429) {
+          throw new Error("Too many requests. Please try again later.");
+        } else {
+          throw new Error(`Unable to fetch visa information (Error ${response.status}). Please try again later.`);
         }
-      })
+      }
 
-      xhr.open("POST", "https://visa-requirement.p.rapidapi.com/")
-      xhr.setRequestHeader("x-rapidapi-key", "a44fe90a4cmsh4069920c797fa54p17fa8bjsnd4baeb96a710")
-      xhr.setRequestHeader("x-rapidapi-host", "visa-requirement.p.rapidapi.com")
-      xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
+      const responseData = await response.json();
+      
+      // Check if we got valid data
+      if (!responseData || typeof responseData !== 'object') {
+        throw new Error("Invalid response from visa information service.");
+      }
 
-      xhr.send(data)
+      setVisaInfo(responseData);
+      setIsLoading(false);
+      // Show the planner section after visa info is loaded
+      setShowPlanner(true);
     } catch (error) {
-      console.error("Error fetching visa information:", error)
-      setError("Failed to fetch visa information. Please try again.")
-      setIsLoading(false)
+      console.error("Error fetching visa information:", error);
+      setError(error instanceof Error ? error.message : "Failed to fetch visa information. Please try again later.");
+      setIsLoading(false);
+      
+      // Show special case info even if API fails
+      if (additionalInfo) {
+        setShowPlanner(true);
+      }
     }
   }
 
