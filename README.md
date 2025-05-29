@@ -30,27 +30,27 @@ graph TD
     A[User Interface] <--> B[Next.js Frontend]
     
     subgraph "Visa Information System"
-        B <--> C[Visa Info API]
+        B --> C[Visa Info API]
         B <--> D[Special Visa Cases]
-        C <--> E[RapidAPI]
-        D <--> F[Local Database]
-        D <--> G[Visa Hacks]
+        C --> E[RapidAPI]
+        D --> F[Local Database]
+        D --> G[Visa Hacks]
     end
     
     subgraph "AI Travel Planning"
         B <--> H[DigitalOcean GenAI]
-        H <--> I[Llama 3.3 Instruct]
-        I <--> J[Generate Itinerary]
-        I <--> K[Create Packing List]
-        I <--> L[Local Tips]
+        H --> I[Llama 3.3 Instruct]
+        I --> J[Generate Itinerary]
+        I --> K[Create Packing List]
+        I --> L[Local Tips]
     end
     
     subgraph "Community Section"
         B <--> M[Community Features]
         M <--> N[Postgres Database]
-        M <--> O[Content Moderation]
-        O <--> P[OpenAI Moderation]
-        O <--> Q[Gibberish Detection]
+        M --> O[Content Moderation]
+        O --> P[OpenAI Moderation]
+        O --> Q[Gibberish Detection]
         M <--> R[Experience Sharing]
         M <--> S[Country Filtering]
     end
