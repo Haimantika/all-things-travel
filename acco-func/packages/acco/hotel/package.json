@@ -1,0 +1,10 @@
+{
+  "name": "acco-hotel",
+  "version": "1.0.0",
+  "description": "Hotel API integration",
+  "main": "hotel.js",
+  "dependencies": {
+    "axios": "^1.6.7",
+    "dotenv": "^16.4.1"
+  }
+} 
