@@ -13,6 +13,8 @@ import { generateTravelPlan } from "@/app/actions/generate-travel-plan"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Link from "next/link"
 import Script from "next/script"
+import { FlightInfoCard } from "@/components/flight-info-card"
+import { generateFlightInfo } from "@/app/actions/generate-flight-info"
 
 export default function Home() {
   const [passportCountry, setPassportCountry] = useState("")
@@ -27,6 +29,14 @@ export default function Home() {
   const [travelPlanContent, setTravelPlanContent] = useState<string | null>(null)
   const [tripDuration, setTripDuration] = useState("3")
   const [visitMonth, setVisitMonth] = useState("")
+  const [fromCity, setFromCity] = useState("")
+  const [toCity, setToCity] = useState("")
+  const [departureDate, setDepartureDate] = useState("")
+  const [returnDate, setReturnDate] = useState("")
+  const [tripType, setTripType] = useState<"one-way" | "round-trip">("one-way")
+  const [showFlightInfo, setShowFlightInfo] = useState(false)
+  const [flightInfoLoading, setFlightInfoLoading] = useState(false)
+  const [flightInfoContent, setFlightInfoContent] = useState<string | null>(null)
 
   // Helper function to normalize country names for comparison
   const normalizeCountry = (country: string): string => {
@@ -198,6 +208,38 @@ export default function Home() {
       console.error("Error generating travel plan:", error)
       setError(error instanceof Error ? error.message : "Failed to generate travel plan. Please try again.")
       setPlannerLoading(false)
+    }
+  }
+
+  // Function to handle flight information generation
+  const handleFlightInfo = async () => {
+    if (!fromCity || !toCity || !departureDate) {
+      setError("Please fill in all required flight information")
+      return
+    }
+
+    if (tripType === "round-trip" && !returnDate) {
+      setError("Please select a return date for round-trip flights")
+      return
+    }
+
+    setFlightInfoLoading(true)
+    setError(null)
+
+    try {
+      const content = await generateFlightInfo(
+        fromCity,
+        toCity,
+        departureDate,
+        tripType === "round-trip" ? returnDate : null,
+        tripType
+      )
+      setFlightInfoContent(content)
+      setFlightInfoLoading(false)
+    } catch (error) {
+      console.error("Error generating flight information:", error)
+      setError(error instanceof Error ? error.message : "Failed to generate flight information. Please try again.")
+      setFlightInfoLoading(false)
     }
   }
 
@@ -424,6 +466,117 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* Flight Information Section */}
+        {visaInfo && (
+          <section className="container mx-auto px-4 py-8 md:py-16" aria-label="Flight Information">
+            <div className="relative bg-[#FFE3E3] rounded-3xl p-6 md:p-12 overflow-hidden">
+              <div className="absolute -right-20 -top-20 w-64 h-64 bg-[#FF9E9E] rounded-full opacity-20"></div>
+              <div className="absolute -left-10 -bottom-20 w-48 h-48 bg-[#4ECDC4] rounded-full opacity-10"></div>
+
+              <div className="relative z-10 max-w-3xl mx-auto">
+                <h2 className="text-3xl md:text-5xl font-bold text-[#333] mb-2 md:mb-4 leading-tight text-center px-2 md:px-8">
+                  Flights from {fromCity} to {toCity}
+                </h2>
+                <p className="text-[#666] text-base md:text-lg mb-4 md:mb-8 text-center px-2 md:px-8">
+                  Available flight options for your journey
+                </p>
+                {/* Flight Search Form */}
+                <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg" role="form" aria-label="Flight Search Form">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div className="flex flex-col gap-2">
+                      <label htmlFor="fromCity" className="text-sm font-medium text-[#666]">
+                        From City
+                      </label>
+                      <input
+                        type="text"
+                        id="fromCity"
+                        value={fromCity}
+                        onChange={(e) => setFromCity(e.target.value)}
+                        placeholder="Enter departure city"
+                        className="px-4 py-2 rounded-lg border border-gray-200 focus:border-[#FF6B6B] focus:ring-1 focus:ring-[#FF6B6B] outline-none"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label htmlFor="toCity" className="text-sm font-medium text-[#666]">
+                        To City
+                      </label>
+                      <input
+                        type="text"
+                        id="toCity"
+                        value={toCity}
+                        onChange={(e) => setToCity(e.target.value)}
+                        placeholder="Enter destination city"
+                        className="px-4 py-2 rounded-lg border border-gray-200 focus:border-[#FF6B6B] focus:ring-1 focus:ring-[#FF6B6B] outline-none"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label htmlFor="departureDate" className="text-sm font-medium text-[#666]">
+                        Departure Date
+                      </label>
+                      <input
+                        type="date"
+                        id="departureDate"
+                        value={departureDate}
+                        onChange={(e) => setDepartureDate(e.target.value)}
+                        className="px-4 py-2 rounded-lg border border-gray-200 focus:border-[#FF6B6B] focus:ring-1 focus:ring-[#FF6B6B] outline-none"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label htmlFor="tripType" className="text-sm font-medium text-[#666]">
+                        Trip Type
+                      </label>
+                      <select
+                        id="tripType"
+                        value={tripType}
+                        onChange={(e) => setTripType(e.target.value as "one-way" | "round-trip")}
+                        className="px-4 py-2 rounded-lg border border-gray-200 focus:border-[#FF6B6B] focus:ring-1 focus:ring-[#FF6B6B] outline-none"
+                      >
+                        <option value="one-way">One Way</option>
+                        <option value="round-trip">Round Trip</option>
+                      </select>
+                    </div>
+
+                    {tripType === "round-trip" && (
+                      <div className="flex flex-col gap-2">
+                        <label htmlFor="returnDate" className="text-sm font-medium text-[#666]">
+                          Return Date
+                        </label>
+                        <input
+                          type="date"
+                          id="returnDate"
+                          value={returnDate}
+                          onChange={(e) => setReturnDate(e.target.value)}
+                          className="px-4 py-2 rounded-lg border border-gray-200 focus:border-[#FF6B6B] focus:ring-1 focus:ring-[#FF6B6B] outline-none"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <Button
+                    className="w-full bg-[#FF6B6B] hover:bg-[#FF9E9E] text-white py-4 md:py-6 rounded-xl text-base md:text-lg"
+                    onClick={handleFlightInfo}
+                    disabled={flightInfoLoading}
+                  >
+                    {flightInfoLoading ? "Finding flight info..." : "Get Flight Information"}
+                  </Button>
+                </div>
+
+                {/* Flight Information Card */}
+                {flightInfoContent && (
+                  <FlightInfoCard
+                    fromCity={fromCity}
+                    toCity={toCity}
+                    content={flightInfoContent}
+                  />
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Features Section */}
         <section className="container mx-auto px-4 py-8 md:py-16" aria-label="Travel Features">
