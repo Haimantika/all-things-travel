@@ -23,15 +23,15 @@ Nomado is an application that helps travellers plan their next trips by providin
   - Custom API endpoints for special visa cases
 - **Analytics**: Google Analytics
 
-## Hotelbeds API Integration 🏨
+## TripAdvisor Flight Integration 🏨
 
-The application integrates with Hotelbeds API to provide hotel recommendations. The integration is implemented as a serverless function in DigitalOcean Functions. Learn [how to create a function namespace](https://docs.digitalocean.com/products/functions/getting-started/quickstart/) from the contol panel. 
+The application integrates with TripAdvisor API to provide flight recommendations. The integration is implemented as a serverless function in DigitalOcean Functions. Learn [how to create a function namespace](https://docs.digitalocean.com/products/functions/getting-started/quickstart/) from the contol panel. 
 
 ### Configuration
 ```env
-HOTELBEDS_API_KEY=your_api_key
-HOTELBEDS_SECRET=your_secret_key
-HOTELBEDS_API_URL=api_base_url
+TRIPADVISOR_API_KEY=your_api_key
+TRIPADVISOR_API_HOST=your_secret_key
+TRIPADVISOR_API_URL=api_base_url
 ```
 
 ### Deployment
@@ -43,8 +43,7 @@ HOTELBEDS_API_URL=api_base_url
    ```
 2. Deploy the function:
    ```bash
-   cd acco-func/packages/acco/hotel
-   doctl serverless deploy .
+   doctl serverless deploy flight-info
    ```
 
 ## Architecture Diagram 📐

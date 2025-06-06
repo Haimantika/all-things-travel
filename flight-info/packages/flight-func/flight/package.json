@@ -1,0 +1,11 @@
+{
+  "name": "flight-func",
+  "version": "1.0.0",
+  "description": "Flight search function using TripAdvisor API",
+  "type": "module",
+  "main": "flight.js",
+  "dependencies": {
+    "axios": "^1.6.7",
+    "dotenv": "^16.4.5"
+  }
+} 

@@ -1,0 +1,19 @@
+parameters: {}
+environment: {}
+packages:
+    - name: flight-func
+      shared: false
+      environment: {}
+      parameters: {}
+      annotations: {}
+      functions:
+        - name: flight
+          binary: false
+          main: ""
+          runtime: nodejs:default
+          web: true
+          webSecure: false
+          parameters: {}
+          environment: {}
+          annotations: {}
+          limits: {}
