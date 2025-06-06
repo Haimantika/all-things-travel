@@ -17,11 +17,29 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     siteName: "Nomado",
+    images: [
+      {
+        url: "https://nomado.live/image.png",
+        width: 1200,
+        height: 630,
+        alt: "Nomado - Your Smart Travel Companion",
+        type: "image/png",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Nomado - Your Smart Travel Companion",
     description: "Plan your perfect trip with Nomado! Get instant visa information, personalized travel itineraries, and smart packing lists.",
+    images: [
+      {
+        url: "https://nomado.live/image.png",
+        width: 1200,
+        height: 630,
+        alt: "Nomado - Your Smart Travel Companion",
+        type: "image/png",
+      },
+    ],
   },
   robots: {
     index: true,
