@@ -54,6 +54,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta property="og:image" content="https://nomado.live/image.png" />
+        <meta property="og:image:type" content="image/png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="https://nomado.live/image.png" />
+      </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         {children}
       </body>
