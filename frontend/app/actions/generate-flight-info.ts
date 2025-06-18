@@ -43,6 +43,7 @@ export async function generateFlightInfo(
     Airline FlightNumber: Departing [Airport] at [Time], arriving [Airport] at [Time] (Flight Duration: [Duration], non-stop/with layover)` : ""}
 
     For each flight, include:
+    - The type of flight (Boeing 737, Airbus A320, etc.)
     - Airline name and flight number
     - Airport codes
     - Exact departure and arrival times
