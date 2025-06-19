@@ -1,7 +1,7 @@
 "use client"
 import { Button } from "@/components/ui/button"
-import { Compass, MapPin, Plane, Globe, StampIcon as Passport, CalendarRange, Backpack, Calendar, Stamp } from "lucide-react"
-import { useState } from "react"
+import { Compass, MapPin, Plane, Globe, StampIcon as Passport, CalendarRange, Backpack, Calendar, Stamp, X } from "lucide-react"
+import { useState, useEffect } from "react"
 import { countryNameToCode } from "@/lib/countries"
 import { VisaInfoCard } from "@/components/visa-info-card"
 import { Header } from "@/components/header"
@@ -37,6 +37,38 @@ export default function Home() {
   const [showFlightInfo, setShowFlightInfo] = useState(false)
   const [flightInfoLoading, setFlightInfoLoading] = useState(false)
   const [flightInfoContent, setFlightInfoContent] = useState<string | null>(null)
+  const [showChatNotification, setShowChatNotification] = useState(false)
+
+  // Show chat notification after a delay
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowChatNotification(true)
+    }, 3000) // Show after 3 seconds
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Show notification when visa info is displayed
+  useEffect(() => {
+    if (visaInfo && !showChatNotification) {
+      const timer = setTimeout(() => {
+        setShowChatNotification(true)
+      }, 2000) // Show 2 seconds after visa info appears
+
+      return () => clearTimeout(timer)
+    }
+  }, [visaInfo, showChatNotification])
+
+  // Auto-hide notification after 8 seconds
+  useEffect(() => {
+    if (showChatNotification) {
+      const timer = setTimeout(() => {
+        setShowChatNotification(false)
+      }, 8000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [showChatNotification])
 
   // Helper function to normalize country names for comparison
   const normalizeCountry = (country: string): string => {
@@ -307,6 +339,125 @@ export default function Home() {
         id="structured-data"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+
+      {/* Chatbot Script */}
+      <Script
+        id="chatbot-script"
+        src="https://rnd2lhiawerdm56gwqaniuuk.agents.do-ai.run/static/chatbot/widget.js"
+        data-agent-id="d4dae41f-4cd9-11f0-bf8f-4e013e2ddde4"
+        data-chatbot-id="BF5y8hoZsVCP7iDtbJnYt6LGJxkC0zXE"
+        data-name="Nomado Travel Assistant"
+        data-primary-color="#FF6B6B"
+        data-secondary-color="#FFF8E1"
+        data-button-background-color="#FF6B6B"
+        data-button-text-color="#FFFFFF"
+        data-chat-background-color="#FFFFFF"
+        data-user-message-background-color="#FF6B6B"
+        data-user-message-text-color="#FFFFFF"
+        data-bot-message-background-color="#F8F9FA"
+        data-bot-message-text-color="#333333"
+        data-starting-message="Hello! I'm your Nomado travel assistant. I can help you find perfect accommodation options, nomad-friendly stays, and answer all your travel questions! 🏠✈️"
+        data-logo="/static/chatbot/icons/default-agent.svg"
+        data-button-icon="🏠"
+        data-button-text="Need accommodation?"
+        data-header-title="Nomado Travel Assistant"
+        data-header-subtitle="Your AI travel companion"
+        data-welcome-message="Welcome to Nomado! I'm here to help you find the perfect accommodation for your travels. Whether you're looking for nomad-friendly stays, budget options, or luxury accommodations, I've got you covered! 🏠✨"
+        data-typing-indicator-color="#FF6B6B"
+        data-input-placeholder="Ask me about accommodation options..."
+        data-send-button-color="#FF6B6B"
+        data-close-button-color="#FF6B6B"
+        data-minimize-button-color="#FF6B6B"
+        data-chat-window-width="400"
+        data-chat-window-height="600"
+        data-button-size="60"
+        data-button-border-radius="50%"
+        data-chat-window-border-radius="20px"
+        data-message-border-radius="15px"
+        data-font-family="Inter, system-ui, sans-serif"
+        data-animation-duration="300"
+        data-show-typing-indicator="true"
+        data-show-timestamp="true"
+        data-show-user-avatar="true"
+        data-show-bot-avatar="true"
+        data-bot-avatar="🏠"
+        data-user-avatar="👤"
+        data-enable-sound="false"
+        data-enable-notifications="true"
+        data-position="bottom-right"
+        data-offset-x="20"
+        data-offset-y="20"
+        data-z-index="9999"
+        data-theme="light"
+        data-custom-css="
+          .chatbot-widget {
+            font-family: 'Inter', system-ui, sans-serif !important;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1) !important;
+            border-radius: 20px !important;
+          }
+          .chatbot-button {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF9E9E 100%) !important;
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3) !important;
+            border-radius: 50% !important;
+            transition: all 0.3s ease !important;
+          }
+          .chatbot-button:hover {
+            transform: scale(1.1) !important;
+            box-shadow: 0 12px 35px rgba(255, 107, 107, 0.4) !important;
+          }
+          .chatbot-header {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF9E9E 100%) !important;
+            border-radius: 20px 20px 0 0 !important;
+            color: white !important;
+          }
+          .chatbot-messages {
+            background: #FFF8E1 !important;
+          }
+          .chatbot-user-message {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF9E9E 100%) !important;
+            border-radius: 18px 18px 4px 18px !important;
+            color: white !important;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.2) !important;
+          }
+          .chatbot-bot-message {
+            background: white !important;
+            border-radius: 18px 18px 18px 4px !important;
+            color: #333 !important;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+            border: 1px solid #E5E7EB !important;
+          }
+          .chatbot-input {
+            border: 2px solid #FF6B6B !important;
+            border-radius: 25px !important;
+            background: white !important;
+          }
+          .chatbot-input:focus {
+            border-color: #FF9E9E !important;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1) !important;
+          }
+          .chatbot-send-button {
+            background: #FF6B6B !important;
+            border-radius: 50% !important;
+            transition: all 0.3s ease !important;
+          }
+          .chatbot-send-button:hover {
+            background: #FF9E9E !important;
+            transform: scale(1.1) !important;
+          }
+          .chatbot-typing-indicator {
+            background: #FF6B6B !important;
+          }
+          .chatbot-avatar {
+            border-radius: 50% !important;
+            font-size: 20px !important;
+          }
+          .chatbot-timestamp {
+            color: #9CA3AF !important;
+            font-size: 11px !important;
+          }
+        "
+        strategy="afterInteractive"
       />
 
       {/* Header with navigation */}
@@ -677,6 +828,57 @@ export default function Home() {
 
       {/* Mobile Navigation */}
       <MobileNavigation />
+
+      {/* Chat Notification */}
+      {showChatNotification && (
+        <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50 animate-in slide-in-from-bottom-2 duration-500">
+          <div className="bg-gradient-to-r from-[#FF6B6B] to-[#FF9E9E] text-white p-4 rounded-2xl shadow-2xl border border-pink-200 max-w-sm transform hover:scale-105 transition-transform duration-200 animate-bounce">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
+                  <span className="text-lg">🏠</span>
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <h4 className="font-semibold text-sm">Looking for accommodation?</h4>
+                  <button
+                    onClick={() => setShowChatNotification(false)}
+                    className="text-white/70 hover:text-white transition-colors duration-200 hover:scale-110"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <p className="text-xs text-white/90 mb-3 leading-relaxed">
+                  Chat with our AI travel assistant to find perfect stays and accommodation options!
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      // Trigger the chatbot to open
+                      const chatbotButton = document.querySelector('[data-testid="chatbot-button"]') as HTMLElement;
+                      if (chatbotButton) {
+                        chatbotButton.click();
+                      }
+                      setShowChatNotification(false);
+                    }}
+                    className="bg-white text-[#FF6B6B] px-3 py-1.5 rounded-full text-xs font-medium hover:bg-white/90 transition-all duration-200 flex items-center gap-1 hover:scale-105 hover:shadow-lg"
+                  >
+                    <span>💬</span>
+                    Chat Now
+                  </button>
+                  <button
+                    onClick={() => setShowChatNotification(false)}
+                    className="text-white/70 hover:text-white text-xs transition-colors duration-200 hover:underline"
+                  >
+                    Maybe later
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
