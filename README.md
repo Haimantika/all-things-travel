@@ -81,8 +81,9 @@ graph TD
 
 ## DigitalOcean GenAI Integration 🤖
 
-The application uses DigitalOcean's GenAI agent (powered by Llama 3.3 Instruct) to generate personalized travel plans. The integration works as follows:
+The application uses DigitalOcean's GenAI agent (powered by Llama 3.3 Instruct) to generate personalized travel plans and provide intelligent travel assistance through a chatbot interface (powered by GPT-4o model). The integration works as follows:
 
+### Trip Planning
 1. User selects destination, trip duration, and visit month
 2. Frontend sends request to server action
 3. Server action communicates with DigitalOcean's GenAI agent
@@ -92,6 +93,17 @@ The application uses DigitalOcean's GenAI agent (powered by Llama 3.3 Instruct) 
    - Local customs and cultural tips
    - Must-try local foods
    - Transportation recommendations
+
+### AI Travel Assistant Chatbot 💬
+The application features an intelligent chatbot powered by DigitalOcean GenAI with agent routing capabilities that provides:
+
+- **Accommodation Suggestions**: Get personalized hotel and lodging recommendations based on budget, location preferences, and travel style
+- **Cultural Do's and Don'ts**: Learn about local customs, etiquette, and cultural norms to avoid cultural faux pas
+- **Scam Alerts**: Receive warnings about common tourist scams and how to avoid them
+- **Local Tips**: Get insider knowledge about the destination from the AI assistant
+- **Interactive Q&A**: Ask specific questions about your destination and get detailed, contextual responses
+
+The chatbot uses DigitalOcean's agent routing to intelligently direct queries to the most appropriate knowledge base, ensuring accurate and helpful responses for travelers.
 
 ## Getting Started 🏁
 
