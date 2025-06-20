@@ -4,32 +4,32 @@ import OpenAI from "openai"
 
 // Environment variables will be accessed from .env.local in Next.js
 const SECURE_AGENT_KEY = process.env.SECURE_AGENT_KEY
-const AGENT_BASE_URL = process.env.AGENT_BASE_URL
-const AGENT_ENDPOINT = AGENT_BASE_URL ? `${AGENT_BASE_URL}/api/v1/` : undefined
+const AGENT_BASE_URL = "https://inference.do-ai.run/v1"
 
 // Check if we have the required environment variables
-const hasRequiredEnvVars = SECURE_AGENT_KEY && AGENT_BASE_URL
+const hasRequiredEnvVars = SECURE_AGENT_KEY
 
 // Initialize OpenAI client if we have the required environment variables
 const client = hasRequiredEnvVars
   ? new OpenAI({
       apiKey: SECURE_AGENT_KEY,
-      baseURL: AGENT_ENDPOINT,
+      baseURL: AGENT_BASE_URL,
     })
   : null
 
 export async function generateTravelPlan(destination: string, duration = 3, visitMonth = "June"): Promise<string> {
   try {
     console.log(`Starting travel plan generation for ${destination}, ${duration} days in ${visitMonth}`)
+    console.log("Environment check:", { hasKey: !!SECURE_AGENT_KEY, baseUrl: AGENT_BASE_URL })
 
     if (!client) {
       console.warn(
-        "Missing agent access key or base URL! Using mock data. Ensure SECURE_AGENT_KEY and AGENT_BASE_URL are set in .env.local",
+        "Missing agent access key! Using mock data. Ensure SECURE_AGENT_KEY is set in .env.local",
       )
       return getMockTravelPlan(destination, duration, visitMonth)
     }
 
-    const prompt = `Your task is to generate a comprehensive travel plan for a ${duration}-day trip to ${destination} in ${visitMonth}. 
+    const prompt = `Your task is to generate a comprehensive travel plan for a ${duration}-day trip to ${destination} in ${visitMonth}. Make sure to bold the headings.
     
     Please provide:
     1. A ${duration}-day itinerary with day-by-day activities
@@ -40,18 +40,17 @@ export async function generateTravelPlan(destination: string, duration = 3, visi
     
     Format your response in markdown with clear sections.`
 
+    console.log("Making API call with model:", "llama-3.1-8b-instruct")
+    
     const response = await client.chat.completions.create({
-      model: "Llama 3.3 Instruct",
+      model: "llama-3.1-8b-instruct",
       messages: [
         {
-          role: "system",
-          content:
-            "You are an expert travel planner who creates personalized, detailed travel guides. Your responses should be informative, practical, and enthusiastic.",
+          role: "user",
+          content: prompt,
         },
-        { role: "user", content: prompt },
       ],
-      temperature: 0.7,
-      max_tokens: 2000,
+      max_tokens: 1000,
     })
 
     console.log("AI response received")
@@ -60,15 +59,17 @@ export async function generateTravelPlan(destination: string, duration = 3, visi
     return content
   } catch (error) {
     console.error("Error generating travel plan:", error)
+    console.error("Error details:", {
+      name: (error as any)?.name,
+      message: (error as any)?.message,
+      status: (error as any)?.status,
+      code: (error as any)?.code
+    })
 
-    let errorMessage = "Unknown error occurred."
-
-    if (error instanceof OpenAI.RateLimitError) {
-      errorMessage = "Rate limit exceeded. Please try again later."
-    } else if (error instanceof Error) {
-      errorMessage = error.message
-    }
-    throw new Error(`AI Agent Error: ${errorMessage}`)
+    // For now, let's return mock data instead of throwing an error
+    // so we can see what the actual error is
+    console.log("Falling back to mock data due to API error")
+    return getMockTravelPlan(destination, duration, visitMonth)
   }
 }
 
