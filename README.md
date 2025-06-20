@@ -105,6 +105,37 @@ The application features an intelligent chatbot powered by DigitalOcean GenAI wi
 
 The chatbot uses DigitalOcean's agent routing to intelligently direct queries to the most appropriate knowledge base, ensuring accurate and helpful responses for travelers.
 
+## Serverless Inference with DigitalOcean GenAI Platform ⚡
+
+Nomado leverages DigitalOcean's Serverless Inference capabilities to generate itineraries without having to manage model deployments. This provides scalable, cost-effective AI inference that automatically scales based on demand. The implementation in the [generate-travel-plan.ts file](https://github.com/Haimantika/all-things-travel/blob/main/frontend/app/actions/generate-travel-plan.ts) uses the OpenAI-compatible client library to communicate with DigitalOcean's GenAI Platform:
+
+```typescript
+import OpenAI from 'openai';
+
+const client = new OpenAI({
+  apiKey: process.env.DO_GENAI_API_KEY,
+  baseURL: "https://inference.do-ai.run/v1"
+});
+
+const response = await client.chat.completions.create({
+  model: "llama3-8b-instruct",
+  messages: [
+    {
+      role: "system",
+      content: "You are a travel expert. Generate detailed, personalized itineraries."
+    },
+    {
+      role: "user", 
+      content: `Create a ${days}-day itinerary for ${destination} in ${month}.`
+    }
+  ],
+  max_tokens: 2000,
+  temperature: 0.7,
+});
+```
+
+To set up serverless inference, create a model access key in the DigitalOcean GenAI Platform console and add `DO_GENAI_API_KEY=your_model_access_key_here` to your environment variables. You can read more about it in [this tutorial](https://www.digitalocean.com/community/tutorials/serverless-inference-genai).
+
 ## Getting Started 🏁
 
 1. Clone the repository
