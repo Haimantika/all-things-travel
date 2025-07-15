@@ -21,9 +21,9 @@ export async function generateTravelPlan(destination: string, duration = 3, visi
 
 Please provide:
 1. A ${duration}-day itinerary with day-by-day activities
-2. A detailed packing list tailored to this destination in ${visitMonth} (considering the local weather and conditions)
+2. A packing list tailored to this destination in ${visitMonth} (considering the local weather and conditions)
 3. Must-try local foods
-4. Transportation recommendations
+4. Local tansportation recommendations
 
 Format your response in markdown with clear sections.`
 
