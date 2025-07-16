@@ -175,7 +175,7 @@ export default function Home() {
       const response = await fetch("https://visa-requirement.p.rapidapi.com/", {
         method: 'POST',
         headers: {
-          'x-rapidapi-key': process.env.NEXT_PUBLIC_RAPIDAPI_KEY || 'a44fe90a4cmsh4069920c797fa54p17fa8bjsnd4baeb96a710',
+          'x-rapidapi-key': process.env.NEXT_PUBLIC_RAPIDAPI_KEY || '',
           'x-rapidapi-host': 'visa-requirement.p.rapidapi.com',
           'Content-Type': 'application/x-www-form-urlencoded',
         },
