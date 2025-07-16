@@ -834,7 +834,7 @@ export default function Home() {
           </p>
           <div className="border-t border-gray-700 pt-4">
             <a 
-              href="https://github.com/Haimantika/all-things-travel" 
+              href="https://github.com/do-community/nomado" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="inline-flex items-center gap-2 px-4 py-2 bg-[#FF6B6B] text-white rounded-full hover:bg-[#ff5252] transition-colors duration-200 shadow-lg hover:shadow-xl"
