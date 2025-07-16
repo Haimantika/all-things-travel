@@ -39,18 +39,36 @@ export default function Home() {
   const [flightInfoContent, setFlightInfoContent] = useState<string | null>(null)
   const [showChatNotification, setShowChatNotification] = useState(false)
 
-  // Show chat notification after a delay
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowChatNotification(true)
-    }, 3000) // Show after 3 seconds
+  // Check if user has dismissed the notification before
+  const hasUserDismissedNotification = () => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('chatNotificationDismissed') === 'true'
+    }
+    return false
+  }
 
-    return () => clearTimeout(timer)
+  // Function to dismiss notification and remember it
+  const dismissNotification = () => {
+    setShowChatNotification(false)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('chatNotificationDismissed', 'true')
+    }
+  }
+
+  // Show chat notification after a delay (only if not dismissed before)
+  useEffect(() => {
+    if (!hasUserDismissedNotification()) {
+      const timer = setTimeout(() => {
+        setShowChatNotification(true)
+      }, 3000) // Show after 3 seconds
+
+      return () => clearTimeout(timer)
+    }
   }, [])
 
-  // Show notification when visa info is displayed
+  // Show notification when visa info is displayed (only if not dismissed before)
   useEffect(() => {
-    if (visaInfo && !showChatNotification) {
+    if (visaInfo && !showChatNotification && !hasUserDismissedNotification()) {
       const timer = setTimeout(() => {
         setShowChatNotification(true)
       }, 2000) // Show 2 seconds after visa info appears
@@ -63,7 +81,7 @@ export default function Home() {
   useEffect(() => {
     if (showChatNotification) {
       const timer = setTimeout(() => {
-        setShowChatNotification(false)
+        dismissNotification()
       }, 8000)
 
       return () => clearTimeout(timer)
@@ -846,7 +864,7 @@ export default function Home() {
                 <div className="flex items-center justify-between mb-1">
                   <h4 className="font-semibold text-sm">Looking for accommodation?</h4>
                   <button
-                    onClick={() => setShowChatNotification(false)}
+                    onClick={dismissNotification}
                     className="text-white/70 hover:text-white transition-colors duration-200 hover:scale-110"
                   >
                     <X className="h-4 w-4" />
@@ -863,7 +881,7 @@ export default function Home() {
                       if (chatbotButton) {
                         chatbotButton.click();
                       }
-                      setShowChatNotification(false);
+                      dismissNotification();
                     }}
                     className="bg-white text-[#FF6B6B] px-3 py-1.5 rounded-full text-xs font-medium hover:bg-white/90 transition-all duration-200 flex items-center gap-1 hover:scale-105 hover:shadow-lg"
                   >
@@ -871,7 +889,7 @@ export default function Home() {
                     Chat Now
                   </button>
                   <button
-                    onClick={() => setShowChatNotification(false)}
+                    onClick={dismissNotification}
                     className="text-white/70 hover:text-white text-xs transition-colors duration-200 hover:underline"
                   >
                     Maybe later
