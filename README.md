@@ -14,7 +14,7 @@ Nomado is an application that helps travellers plan their next trips by providin
 
 - **Frontend**: Next.js 14 with TypeScript
 - **UI Framework**: Tailwind CSS with custom components
-- **AI Integration**: DigitalOcean's GenAI Agent (Llama 3.3 Instruct)
+- **AI Integration**: DigitalOcean's GradientAI Agent (Llama 3.3 Instruct)
 - **Database**: DigitalOcean Postgres Database for the community section
 - **APIs**: 
   - Visa Requirements API (RapidAPI)
@@ -61,7 +61,7 @@ graph TD
     end
     
     subgraph "AI Travel Planning"
-        B <--> H[DigitalOcean GenAI]
+        B <--> H[DigitalOcean GradientAI]
         H --> I[Llama 3.3 Instruct]
         I --> J[Generate Itinerary]
         I --> K[Create Packing List]
@@ -79,14 +79,14 @@ graph TD
     end
 ```
 
-## DigitalOcean GenAI Integration 🤖
+## DigitalOcean GradientAI Integration 🤖
 
-The application uses DigitalOcean's GenAI agent (powered by Llama 3.3 Instruct) to generate personalized travel plans and provide intelligent travel assistance through a chatbot interface (powered by GPT-4o model). The integration works as follows:
+The application uses DigitalOcean's GradientAI agent (powered by Llama 3.3 Instruct) to generate personalized travel plans and provide intelligent travel assistance through a chatbot interface (powered by GPT-4o model). The integration works as follows:
 
 ### Trip Planning
 1. User selects destination, trip duration, and visit month
 2. Frontend sends request to server action
-3. Server action communicates with DigitalOcean's GenAI agent
+3. Server action communicates with DigitalOcean's GradientAI agent
 4. The agent generates comprehensive travel plan including:
    - Day-by-day itinerary
    - Weather-appropriate packing list
@@ -95,7 +95,7 @@ The application uses DigitalOcean's GenAI agent (powered by Llama 3.3 Instruct) 
    - Transportation recommendations
 
 ### AI Travel Assistant Chatbot 💬
-The application features an intelligent chatbot powered by DigitalOcean GenAI with agent routing capabilities that provides:
+The application features an intelligent chatbot powered by DigitalOcean GradientAI with agent routing capabilities that provides:
 
 - **Accommodation Suggestions**: Get personalized hotel and lodging recommendations based on budget, location preferences, and travel style
 - **Cultural Do's and Don'ts**: Learn about local customs, etiquette, and cultural norms to avoid cultural faux pas
@@ -105,36 +105,12 @@ The application features an intelligent chatbot powered by DigitalOcean GenAI wi
 
 The chatbot uses DigitalOcean's agent routing to intelligently direct queries to the most appropriate knowledge base, ensuring accurate and helpful responses for travelers.
 
-## Serverless Inference with DigitalOcean GenAI Platform ⚡
+## Serverless Inference with DigitalOcean GradientAI Platform ⚡
 
-Nomado leverages DigitalOcean's Serverless Inference capabilities to generate itineraries without having to manage model deployments. This provides scalable, cost-effective AI inference that automatically scales based on demand. The implementation in the [generate-travel-plan.ts file](https://github.com/Haimantika/all-things-travel/blob/main/frontend/app/actions/generate-travel-plan.ts) uses the OpenAI-compatible client library to communicate with DigitalOcean's GenAI Platform:
+Nomado leverages DigitalOcean's Serverless Inference capabilities to generate itineraries without having to manage model deployments. This provides scalable, cost-effective AI inference that automatically scales based on demand. The implementation in the [generate-travel-plan.ts file](https://github.com/Haimantika/all-things-travel/blob/main/frontend/app/actions/generate-travel-plan.ts) uses the OpenAI-compatible client library to communicate with DigitalOcean's GradientAI Platform.
 
-```typescript
-import OpenAI from 'openai';
 
-const client = new OpenAI({
-  apiKey: process.env.DO_GENAI_API_KEY,
-  baseURL: "https://inference.do-ai.run/v1"
-});
-
-const response = await client.chat.completions.create({
-  model: "llama3-8b-instruct",
-  messages: [
-    {
-      role: "system",
-      content: "You are a travel expert. Generate detailed, personalized itineraries."
-    },
-    {
-      role: "user", 
-      content: `Create a ${days}-day itinerary for ${destination} in ${month}.`
-    }
-  ],
-  max_tokens: 2000,
-  temperature: 0.7,
-});
-```
-
-To set up serverless inference, create a model access key in the DigitalOcean GenAI Platform console and add `DO_GENAI_API_KEY=your_model_access_key_here` to your environment variables. You can read more about it in [this tutorial](https://www.digitalocean.com/community/tutorials/serverless-inference-genai).
+To set up serverless inference, create a model access key in the DigitalOcean GradientAI Platform console and add `SECURE_AGENT_KEY=your_model_access_key_here` to your environment variables. You can read more about it in [this tutorial](https://www.digitalocean.com/community/tutorials/serverless-inference-gradientai).
 
 ## Getting Started 🏁
 
@@ -155,6 +131,7 @@ To set up serverless inference, create a model access key in the DigitalOcean Ge
    # API Keys
    OPENAI_API_KEY=your openai key
    RAPIDAPI_KEY=your rapidaapi key
+   SECURE_AGENT_KEY=your DO API key
    ```
 4. Run the development server:
    ```bash
