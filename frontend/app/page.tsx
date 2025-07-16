@@ -170,12 +170,17 @@ export default function Home() {
     setAdditionalInfo(specialInfo)
 
     try {
+      const apiKey = process.env.NEXT_PUBLIC_RAPIDAPI_KEY;
+      if (!apiKey) {
+        throw new Error("Visa information service is not configured. Please contact support.");
+      }
+
       const data = `passport=${passportCode}&destination=${toCode}`
       
       const response = await fetch("https://visa-requirement.p.rapidapi.com/", {
         method: 'POST',
         headers: {
-          'x-rapidapi-key': process.env.NEXT_PUBLIC_RAPIDAPI_KEY || '',
+          'x-rapidapi-key': apiKey,
           'x-rapidapi-host': 'visa-requirement.p.rapidapi.com',
           'Content-Type': 'application/x-www-form-urlencoded',
         },

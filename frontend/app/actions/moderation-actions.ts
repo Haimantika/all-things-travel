@@ -92,10 +92,20 @@ export async function moderateContent(
     try {
       console.log('Checking for gibberish:', trimmedContent);
       
+      const apiKey = process.env.RAPIDAPI_KEY;
+      if (!apiKey) {
+        console.log('RapidAPI key not configured, skipping gibberish detection');
+        return {
+          success: true,
+          flagged: false,
+          reasons: []
+        };
+      }
+
       const response = await fetch('https://gibberish-text-detection.p.rapidapi.com/detect', {
         method: 'POST',
         headers: {
-          'x-rapidapi-key': process.env.RAPIDAPI_KEY || '',
+          'x-rapidapi-key': apiKey,
           'x-rapidapi-host': 'gibberish-text-detection.p.rapidapi.com',
           'Content-Type': 'application/json'
         },
