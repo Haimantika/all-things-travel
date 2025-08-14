@@ -1,0 +1,3 @@
+gradient>=3.0.0b3
+typing-extensions>=4.0.0
+python-dotenv>=1.0.0

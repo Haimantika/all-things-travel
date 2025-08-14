@@ -1,0 +1,12 @@
+{
+  "name": "flight-func",
+  "version": "1.0.0",
+  "description": "Flight information generation using Gradient SDK",
+  "type": "module",
+  "main": "flight.py",
+  "language": "python",
+  "dependencies": {
+    "gradient": "^0.1.0",
+    "typing-extensions": "^4.0.0"
+  }
+} 
